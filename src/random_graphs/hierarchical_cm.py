@@ -13,7 +13,7 @@ def hierarchical_configuration_model(deg_seq_in: List[int],
 
     :param deg_seq_in: a list of integers, ith item denotes the degree of the ith vertex within its community
     :param deg_seq_out: a list of integers, ith item denotes the degree of the ith vertex matching to other communities
-    :param communities: Dictionary mapping community ids to list of vertices (disjoint communities)
+    :param communities: Dictionaryy mapping community ids to list of vertices (disjoint communities)
     :param seed:
     :return:
     """
