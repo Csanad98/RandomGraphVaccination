@@ -47,22 +47,27 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
     half_edges = np.zeros((num_half_edges, 2))
     half_edge_index = 0
     for v_index in range(len(deg_seq_out)):
-        half_edges[half_edge_index][0] = v_index
-        half_edges[half_edge_index][1] = communities[v_index]
+        for h in range(deg_seq_out[v_index]):
+            half_edges[half_edge_index][0] = v_index
+            half_edges[half_edge_index][1] = communities[v_index]
+            half_edge_index += 1
 
     # pick first half edge uniformly from all h.e.-s
     first = random.randint(0, len(half_edges))
     first_community = half_edges[first, 1]
-    half_edges_from_other_communities = np.where(half_edges[:] != first_community)
+    half_edges_from_other_communities = np.where(half_edges[:, 1] != first_community)[0]
     second = random.randint(0, len(half_edges_from_other_communities))
+    first_vertex_id = half_edges[first, 0]
+    second_vertex_id = half_edges_from_other_communities[second]
+    full_graph.add_edge(first_vertex_id, second_vertex_id)
 
     return full_graph
 
 
 if "__main__" == __name__:
     seed = 0
-    deg_seq_in = np.array([5, 3, 3, 3])
-    deg_seq_out = np.array([5, 3, 3, 3])
+    deg_seq_in = np.array([1, 3, 3, 3])
+    deg_seq_out = np.array([1, 3, 3, 3])
     communities = np.array([0, 0, 1, 1])
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
