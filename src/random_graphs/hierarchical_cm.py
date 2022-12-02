@@ -53,17 +53,18 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
 
     # while we have half-edges left to match:
     while half_edges.shape[0] != 0:
-        # pick first half edge uniformly from all h.e.-s
-        first_he_id = random.randint(0, len(half_edges))  # first half-edge id
-        first_community = half_edges[first_he_id, 1]
-        first_vertex_id = half_edges[first_he_id, 0]
+        # pick first half edge uniformly within community with most h.e.-s
+        # count which community has the most h.e.-s
+        comm_he_count = np.bincount(half_edges[:, 1].astype(int))
+        comm_most_he_index = np.argmax(comm_he_count)
+        half_edge_indices_of_community_with_most_hes = np.where(half_edges[:, 1] == comm_most_he_index)[0]
+        first = random.randint(0, len(half_edge_indices_of_community_with_most_hes)-1)
+        first_he_id = half_edge_indices_of_community_with_most_hes[first]
+        first_community = half_edges[first_he_id][1]
+        first_vertex_id = half_edges[first_he_id][0]
 
         half_edge_indices_of_other_communities = np.where(half_edges[:, 1] != first_community)[0]
-
-        # if multiple half edges are left from the same community only, then stop here
-        # this means that the degree sequence won't match exactly
-        if half_edge_indices_of_other_communities.shape[0] == 0:
-            return full_graph
+        
         second = random.randint(0, len(half_edge_indices_of_other_communities)-1)
         second_he_id = half_edge_indices_of_other_communities[second]
         second_vertex_id = half_edges[second_he_id][0]
@@ -77,10 +78,10 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
 
 
 if "__main__" == __name__:
-    seed = 4
-    deg_seq_in = np.array([1, 3, 3, 3])
-    deg_seq_out = np.array([1, 3, 3, 3])
-    communities = np.array([0, 0, 1, 1])
+    seed = 100
+    deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
+    deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
+    communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
     nx.draw(g, pos=pos, with_labels=True)
