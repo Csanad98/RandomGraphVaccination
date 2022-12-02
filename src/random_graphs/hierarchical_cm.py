@@ -20,15 +20,15 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
     """
 
     assert len(deg_seq_in) == len(deg_seq_out)
-    full_graph = nx.Graph()
+    full_graph = nx.MultiGraph()
 
     # Run configuration model for each community, use degree sequence meant for within communities
     for c in np.unique(communities):
         # get vertex ids for current community
         vertex_ids_for_c = np.where(communities == c)[0]  # index 0 since we have only one dimension
         # call nx.Graph to get a simple graph -> erased CM model
-        community_sub_graph = nx.Graph(nx.configuration_model(deg_sequence=deg_seq_in[vertex_ids_for_c], seed=seed))
-        community_sub_graph.remove_edges_from(nx.selfloop_edges(community_sub_graph))  # remove self loops
+        community_sub_graph = nx.configuration_model(deg_sequence=deg_seq_in[vertex_ids_for_c], seed=seed)
+        # community_sub_graph.remove_edges_from(nx.selfloop_edges(community_sub_graph))  # remove self loops
         full_graph = nx.disjoint_union(full_graph, community_sub_graph)
 
     random.seed(seed)
@@ -51,28 +51,37 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
             half_edges[half_edge_index][1] = communities[v_index]
             half_edge_index += 1
 
-    # pick first half edge uniformly from all h.e.-s
-    first = random.randint(0, len(half_edges))
-    first_community = half_edges[first, 1]
-    half_edges_from_other_communities = np.where(half_edges[:, 1] != first_community)[0]
-    second = random.randint(0, len(half_edges_from_other_communities))
-    first_vertex_id = half_edges[first, 0]
-    second_vertex_id = half_edges_from_other_communities[second]
-    full_graph.add_edge(first_vertex_id, second_vertex_id)
+    # while we have half-edges left to match:
+    while half_edges.shape[0] != 0:
+        # pick first half edge uniformly from all h.e.-s
+        first_he_id = random.randint(0, len(half_edges))  # first half-edge id
+        first_community = half_edges[first_he_id, 1]
+        first_vertex_id = half_edges[first_he_id, 0]
 
-    # TODO: current issue is that vertices in the communities don't have the same ids as their index in the degree
-    #  sequence lists, hence the above add_edge doesn't add the edge between the communities/ the right vertices
-    # fix: find a way to label vertices inside communities the right way
+        half_edge_indices_of_other_communities = np.where(half_edges[:, 1] != first_community)[0]
+
+        # if multiple half edges are left from the same community only, then stop here
+        # this means that the degree sequence won't match exactly
+        if half_edge_indices_of_other_communities.shape[0] == 0:
+            return full_graph
+        second = random.randint(0, len(half_edge_indices_of_other_communities)-1)
+        second_he_id = half_edge_indices_of_other_communities[second]
+        second_vertex_id = half_edges[second_he_id][0]
+
+        full_graph.add_edge(first_vertex_id, second_vertex_id)
+
+        # remove matched half edges from h.e. list
+        half_edges = np.delete(half_edges, [first_he_id, second_he_id], axis=0)
 
     return full_graph
 
 
 if "__main__" == __name__:
-    seed = 0
+    seed = 4
     deg_seq_in = np.array([1, 3, 3, 3])
     deg_seq_out = np.array([1, 3, 3, 3])
     communities = np.array([0, 0, 1, 1])
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
-    nx.draw(g, pos=pos)
+    nx.draw(g, pos=pos, with_labels=True)
     plt.show()
