@@ -26,9 +26,11 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
     for c in np.unique(communities):
         # get vertex ids for current community
         vertex_ids_for_c = np.where(communities == c)[0]  # index 0 since we have only one dimension
-        # call nx.Graph to get a simple graph -> erased CM model
+        # call nx.Graph to get a (non-erased) Configuration Model Multigraph
         community_sub_graph = nx.configuration_model(deg_sequence=deg_seq_in[vertex_ids_for_c], seed=seed)
-        # community_sub_graph.remove_edges_from(nx.selfloop_edges(community_sub_graph))  # remove self loops
+        community_sub_graph.remove_edges_from(nx.selfloop_edges(community_sub_graph))  # remove self loops
+        # Remove Parallel Edges by turning the Multigraph into a Graph
+        community_sub_graph = nx.Graph(community_sub_graph)
         full_graph = nx.disjoint_union(full_graph, community_sub_graph)
 
     random.seed(seed)
