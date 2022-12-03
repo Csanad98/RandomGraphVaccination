@@ -20,7 +20,7 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
     """
 
     assert len(deg_seq_in) == len(deg_seq_out)
-    full_graph = nx.MultiGraph()
+    full_graph = nx.Graph()
 
     # Run configuration model for each community, use degree sequence meant for within communities
     for c in np.unique(communities):
