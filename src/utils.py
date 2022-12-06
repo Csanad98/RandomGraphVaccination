@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 from matplotlib import colors, pylab
 
@@ -15,3 +17,13 @@ def create_community_color_map(communities: np.array) -> np.array:
     color_list = [colors.rgb2hex(cmap(i)[:3]) for i in range(cmap.N)]
     community_cmap = np.array([color_list[i] for i in communities])
     return community_cmap
+
+
+def community_map_from_community_sizes(community_sizes: List[int]):
+    communities = []
+    i = 0
+    for size in community_sizes:
+        for j in range(size):
+            communities.append(i)
+        i += 1
+    return np.array(communities)
