@@ -5,6 +5,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random
 
+from random_graphs.utils import create_community_color_map
+
 
 def hierarchical_configuration_model(deg_seq_in: np.array,
                                      deg_seq_out: np.array,
@@ -66,7 +68,7 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
         first_vertex_id = half_edges[first_he_id][0]
 
         half_edge_indices_of_other_communities = np.where(half_edges[:, 1] != first_community)[0]
-        
+
         second = random.randint(0, len(half_edge_indices_of_other_communities)-1)
         second_he_id = half_edge_indices_of_other_communities[second]
         second_vertex_id = half_edges[second_he_id][0]
@@ -80,11 +82,13 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
 
 
 if "__main__" == __name__:
-    seed = 100
+    seed = 1
     deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
     deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
     communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
+
+    color_map = create_community_color_map(communities)
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
-    nx.draw(g, pos=pos, with_labels=True)
+    nx.draw(g, pos=pos, with_labels=True, node_color=color_map)
     plt.show()
