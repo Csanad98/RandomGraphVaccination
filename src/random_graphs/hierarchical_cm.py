@@ -25,7 +25,9 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
     """
 
     assert len(deg_seq_in) == len(deg_seq_out)
+    is_community_structure_possible(np.array(deg_seq_out), communities)
     full_graph = nx.Graph()
+    random.seed(seed)
 
     # Run configuration model for each community, use degree sequence meant for within communities
     for c in np.unique(communities):
@@ -38,33 +40,21 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
         community_sub_graph = nx.Graph(community_sub_graph)
         full_graph = nx.disjoint_union(full_graph, community_sub_graph)
 
-    random.seed(seed)
     # algo 3: choose a remaining half edge uniformly, then choose another half edge uniformly, match them, update
     # remaining half edges
     # addition for hierarchical CM: choose 2nd h.e. uniformly from any other community
 
-    # create list for half edges:
-    # for each h.e. we need to know:
-    # - its vertex
-    # - its community
-    # map id to a tuple of vertex id and community id
-    # should be easy to remove h.e.
-    num_half_edges = np.sum(deg_seq_out)
-    half_edges = np.zeros((num_half_edges, 2))
-    half_edge_index = 0
-    for v_index in range(len(deg_seq_out)):
-        for h in range(deg_seq_out[v_index]):
-            half_edges[half_edge_index][0] = v_index
-            half_edges[half_edge_index][1] = communities[v_index]
-            half_edge_index += 1
+    half_edges = create_half_edges_between_communities(deg_seq_out, communities)
 
     # while we have half-edges left to match:
     while half_edges.shape[0] != 0:
-        # pick first half edge uniformly within community with most h.e.-s
         # count which community has the most h.e.-s
         comm_he_count = np.bincount(half_edges[:, 1].astype(int))
+        # pick first half edge uniformly within community with most h.e.-s
         comm_most_he_index = np.argmax(comm_he_count)
         half_edge_indices_of_community_with_most_hes = np.where(half_edges[:, 1] == comm_most_he_index)[0]
+
+        # pick uniform h.e. within the community with most h.e.-s
         first = random.randint(0, len(half_edge_indices_of_community_with_most_hes)-1)
         first_he_id = half_edge_indices_of_community_with_most_hes[first]
         first_community = half_edges[first_he_id][1]
@@ -83,13 +73,36 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
 
     return full_graph
 
+def create_half_edges_between_communities(deg_seq_out, communities):
+    num_half_edges = np.sum(deg_seq_out)
+    half_edges = np.zeros((num_half_edges, 2))
+    half_edge_index = 0
+
+    # setup half edge map
+    for v_index in range(len(deg_seq_out)):
+        for h in range(deg_seq_out[v_index]):
+            half_edges[half_edge_index][0] = v_index  # first item in the tuple indicates vertex index of h.e.
+            # 2nd item in the tuple indicates community index of h.e.
+            half_edges[half_edge_index][1] = communities[v_index]
+            half_edge_index += 1
+    return half_edges
+
+
+def is_community_structure_possible(deg_seq_out, communities):
+    # for each community the number of out h.e.-s cannot exceed the total number of h.e.-s from every other community
+    # half_edges = create_half_edges_between_communities(deg_seq_out=deg_seq_out, communities=communities)
+    community_ids = np.unique(communities)
+    for c in community_ids:
+        vertex_ids_in_c = np.where(communities == c)[0]
+        vertex_ids_not_in_c = np.where(communities != c)[0]
+        assert np.sum(deg_seq_out[vertex_ids_in_c.astype(int)]) <= np.sum(deg_seq_out[vertex_ids_not_in_c.astype(int)]), \
+            "for each community the number of out h.e.-s cannot exceed the total number of h.e.-s from every other " \
+            "community"
+
 
 if "__main__" == __name__:
     seed = 1
-    # deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
-    # deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
-    # communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
-    community_sizes = [9, 4, 5, 8, 5, 14]
+    community_sizes = [10, 15, 13, 12]
     tau = 2.8
     p = 0.05
     n = sum(community_sizes)
@@ -99,5 +112,5 @@ if "__main__" == __name__:
     color_map = create_community_color_map(communities)
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
-    nx.draw(g, pos=pos, with_labels=True, node_color=color_map)
+    nx.draw_spring(g, with_labels=True, node_color=color_map)
     plt.show()
