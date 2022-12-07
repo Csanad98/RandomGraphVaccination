@@ -89,10 +89,11 @@ if "__main__" == __name__:
     # deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
     # deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
     # communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
-    community_sizes = [5, 4, 3]
-    tau = 2
+    community_sizes = [9, 4, 5, 8, 5, 14]
+    tau = 2.8
+    p = 0.05
     n = sum(community_sizes)
-    deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau)
+    deg_seq_out = generate_power_law_degree_seq(n=n, p=p)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_power_law_degree_seq_community(community_sizes=community_sizes, tau=tau)
     color_map = create_community_color_map(communities)
