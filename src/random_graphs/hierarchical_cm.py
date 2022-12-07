@@ -5,7 +5,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import random
 
-from utils import create_community_color_map, community_map_from_community_sizes
+from utils import create_community_random_color_map, community_map_from_community_sizes
 
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
     generate_power_law_degree_seq_community
@@ -109,7 +109,7 @@ if "__main__" == __name__:
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_power_law_degree_seq_community(community_sizes=community_sizes, tau=tau)
-    color_map = create_community_color_map(communities)
+    color_map = create_community_random_color_map(communities)
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
     nx.draw_spring(g, with_labels=True, node_color=color_map)
