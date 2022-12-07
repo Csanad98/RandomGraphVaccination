@@ -93,7 +93,7 @@ if "__main__" == __name__:
     tau = 2.8
     p = 0.05
     n = sum(community_sizes)
-    deg_seq_out = generate_power_law_degree_seq(n=n, p=p)
+    deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_power_law_degree_seq_community(community_sizes=community_sizes, tau=tau)
     color_map = create_community_color_map(communities)
