@@ -1,10 +1,10 @@
 import networkx as nx
 import numpy as np
-import random
+
 
 def attr_assign(g: nx.Graph, communities: np.array, seed: int = 0):
     np.random.seed(seed)
-
+    n = len(communities)
     # Adding Community attribute
     nx.set_node_attributes(g, dict(zip(range(n), communities)), "community")
 
@@ -33,6 +33,3 @@ def attr_assign(g: nx.Graph, communities: np.array, seed: int = 0):
     nx.set_node_attributes(g, outcome_dict, "outcome")
 
     return g
-
-
-
