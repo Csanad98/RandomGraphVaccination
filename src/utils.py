@@ -10,7 +10,7 @@ def create_community_random_color_map(communities: np.array, seed: int = 0) -> n
     :param communities: 1d array of integers, ith value indicates the community id of the ith node
     :return: color_map: a list of colors
     """
-    np.random.seed(seed=seed)
+    np.random.seed(seed)
     n = communities.shape[0]
     color_list = [np.random.rand(3,) for _ in range(n)]
     community_cmap = np.array([color_list[i] for i in communities])
