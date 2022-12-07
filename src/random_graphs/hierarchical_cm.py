@@ -55,14 +55,14 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
         half_edge_indices_of_community_with_most_hes = np.where(half_edges[:, 1] == comm_most_he_index)[0]
 
         # pick uniform h.e. within the community with most h.e.-s
-        first = random.randint(0, len(half_edge_indices_of_community_with_most_hes)-1)
+        first = random.randint(0, len(half_edge_indices_of_community_with_most_hes) - 1)
         first_he_id = half_edge_indices_of_community_with_most_hes[first]
         first_community = half_edges[first_he_id][1]
         first_vertex_id = half_edges[first_he_id][0]
 
         half_edge_indices_of_other_communities = np.where(half_edges[:, 1] != first_community)[0]
 
-        second = random.randint(0, len(half_edge_indices_of_other_communities)-1)
+        second = random.randint(0, len(half_edge_indices_of_other_communities) - 1)
         second_he_id = half_edge_indices_of_other_communities[second]
         second_vertex_id = half_edges[second_he_id][0]
 
@@ -72,6 +72,7 @@ def hierarchical_configuration_model(deg_seq_in: np.array,
         half_edges = np.delete(half_edges, [first_he_id, second_he_id], axis=0)
 
     return full_graph
+
 
 def create_half_edges_between_communities(deg_seq_out, communities):
     num_half_edges = np.sum(deg_seq_out)
