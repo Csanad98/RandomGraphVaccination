@@ -30,7 +30,7 @@ def attr_assign(g: nx.Graph, deg_seq_out: np.array, deg_seq_in:np.array, communi
 
     # Adding Outcome and infectivity attributes
     outcome_dict = {}
-    infectivity = {}
+    infectivity_dict = {}
 
     p1 = reproduction_number/(18*(deg_seq_out[i]+deg_seq_in[i]))
     p2 = reproduction_number/(22*(deg_seq_out[i]+deg_seq_in[i]))
@@ -38,9 +38,10 @@ def attr_assign(g: nx.Graph, deg_seq_out: np.array, deg_seq_in:np.array, communi
     for i in range(n):
         # if element in Low Risk group then choose different probability of death and recovery and infectivity
         if nx.get_node_attributes(g, "risk_group")[i] == "low_risk":
-            outcome_dict[i], infectivity[i] = ("death", p1) if np.random.binomial(1, 0.083) == 1 else ("recovery", p3)
+            outcome_dict[i], infectivity_dict[i] = (18, p1) if np.random.binomial(1, 0.083) == 1 else (17, p3)
         else:
-            outcome_dict[i], infectivity[i] = ("death", p1) if np.random.binomial(1, 0.012) == 1 else ("recovery", p2)
+            outcome_dict[i], infectivity_dict[i] = (18, p1) if np.random.binomial(1, 0.012) == 1 else (22, p2)
     nx.set_node_attributes(g, outcome_dict, "outcome")
+    nx.set_node_attributes(g, infectivity_dict, "infectivity")
 
     return g
