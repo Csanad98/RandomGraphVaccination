@@ -89,7 +89,7 @@ if "__main__" == __name__:
     # deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
     # deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
     # communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
-    community_sizes = [9, 4, 5, 8, 5, 14]
+    community_sizes = [10, 15, 11, 12, 30, 22]
     tau = 2.8
     p = 0.05
     n = sum(community_sizes)
