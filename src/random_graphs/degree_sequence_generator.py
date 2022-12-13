@@ -2,19 +2,14 @@ from typing import List, Callable
 import numpy as np
 from networkx.utils import powerlaw_sequence
 
+from utils import correct_deg_sum_to_be_even
+
 
 def generate_power_law_degree_seq(n: int, tau: float, seed: int = 0):
     # Note: the resulting sequence may or may not be graphical, but we use CM, which works with self-loops and multi
     # edges, so it's not an issue.
     seq = [int(round(d)) for d in powerlaw_sequence(n=n, exponent=tau, seed=seed)]
     return correct_deg_sum_to_be_even(seq)
-
-
-def correct_deg_sum_to_be_even(seq: np.array):
-    # make sure degrees sum to an even number
-    if np.sum(seq) % 2 != 0:
-        seq[0] += 1
-    return seq
 
 
 def generate_poisson_degree_seq(n: int, lam: float, seed: int = 0):

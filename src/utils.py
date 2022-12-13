@@ -25,3 +25,10 @@ def community_map_from_community_sizes(community_sizes: List[int]):
             communities.append(i)
         i += 1
     return np.array(communities)
+
+
+def correct_deg_sum_to_be_even(seq: np.array):
+    # make sure degrees sum to an even number
+    if np.sum(seq) % 2 != 0:
+        seq[0] += 1
+    return seq

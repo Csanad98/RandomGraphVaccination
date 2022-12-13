@@ -103,7 +103,7 @@ def is_community_structure_possible(deg_seq_out, communities):
 
 if "__main__" == __name__:
     seed = 1
-    community_sizes = [10, 15, 11, 12, 30, 22]
+    community_sizes = [10, 15, 11, 12, 52, 22]
     tau = 2.8
     p = 0.05
     lam = 15
