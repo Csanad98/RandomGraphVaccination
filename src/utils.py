@@ -27,6 +27,27 @@ def community_map_from_community_sizes(community_sizes: List[int]):
     return np.array(communities)
 
 
+def community_sizes_generator(N: int, prop_com_size: int = 0.01):
+    """
+    Creates a random vector of communities based on number of nodes and average community size.
+    Community sizes follow normal distribution with mean the given average and standard deviation
+    such that the values are mostly positive.
+    For none positive values that might occur the absolute value is taken.
+    """
+    # First community is low risk and has half of the population
+    communities = [int((N) / 2)]
+    # The rest
+    leftovers = N - int((N) / 2)
+    i = 0
+    avg_com_size = N * prop_com_size
+    while leftovers > 3 * avg_com_size / 2:
+        communities.append(int(abs(np.random.normal(avg_com_size, avg_com_size / 3, 1))))
+        leftovers -= communities[i]
+        i += 1
+    communities.append(leftovers)
+    return communities
+
+
 def correct_deg_sum_to_be_even(seq: np.array):
     # make sure degrees sum to an even number
     if np.sum(seq) % 2 != 0:

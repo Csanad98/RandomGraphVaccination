@@ -3,10 +3,12 @@ import numpy as np
 
 from random_graphs.hierarchical_cm import hierarchical_configuration_model
 
-from utils import create_community_color_map, community_map_from_community_sizes
+from matplotlib import pyplot as plt
+
+from utils import create_community_random_color_map, community_map_from_community_sizes, community_sizes_generator
 
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
-    generate_power_law_degree_seq_community
+    generate_community_degree_seq, generate_poisson_degree_seq
 from node_attributes import attr_assign
 
 
@@ -37,19 +39,32 @@ if "__main__" == __name__:
     # deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
     # deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
     # communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
-    community_sizes = [10, 15, 11, 12, 30, 22]
+    community_sizes = community_sizes_generator(1000)
     tau = 2.8
     p = 0.05
+    lam = 15
     n = sum(community_sizes)
-    deg_seq_out = generate_power_law_degree_seq(n=n, p=p)
+    deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
-    deg_seq_in = generate_power_law_degree_seq_community(community_sizes=community_sizes, tau=tau)
-    color_map = create_community_color_map(communities)
+    deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
+                                               community_sizes=community_sizes,
+                                               gen_param=lam)
+    color_map = create_community_random_color_map(communities)
     g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
-    g = attr_assign(g, deg_seq_out, deg_seq_in, communities, seed)
-    nx.set_node_attributes(g, {1: 1, 3: 1, 4: 1, 10: 1, 12: 1}, 'health')
+    pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
+    nx.draw_spring(g, with_labels=True, node_color=color_map)
+    plt.show()
+    g = attr_assign(g=g,
+                    deg_seq_out=deg_seq_out,
+                    deg_seq_in=deg_seq_in,
+                    communities=communities,
+                    prop_hr_hr=0.7,
+                    prop_hr_lr=0,
+                    seed=seed)
+    nx.set_node_attributes(g, {1: 1, 3: 1, 4: 1, 10: 1, 100: 1, 200: 1, 300: 1, 400: 1, 500: 1, 604: 1, 640: 1, 603: 1,
+                               622: 1, 677: 1, 690: 1, 688: 1}, 'health')
 
-    for i in range(0, 90):
+    for i in range(0, 365):
         g = time_step_simulation(g, seed)
         seed += 1
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
