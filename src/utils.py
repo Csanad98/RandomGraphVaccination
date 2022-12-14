@@ -29,7 +29,7 @@ def community_map_from_community_sizes(community_sizes: List[int]):
     return np.array(communities)
 
 
-def community_sizes_generator(N: int, prop_com_size: int = 0.01):
+def community_sizes_generator(N: int, prop_com_size: int = 0.05):
     """
     Creates a random vector of communities based on number of nodes and average community size.
     Community sizes follow normal distribution with mean the given average and standard deviation
