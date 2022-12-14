@@ -4,6 +4,7 @@ import networkx as nx
 import numpy as np
 from matplotlib import pyplot as plt
 
+from plots.degree_distribution_plots import plot_degree_seq_comparison
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, generate_community_degree_seq, \
     generate_poisson_degree_seq
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1, hierarchical_configuration_model_algo2
@@ -27,7 +28,7 @@ def get_hcm_degree_distributions(hcm_g: nx.Graph, communities: np.array):
         # get vertex ids for current community
         vertex_ids_for_c = np.where(communities == c)[0]
         c_subgraph = hcm_g.subgraph(vertex_ids_for_c)
-        c_deg_sequence = sorted((d for n, d in c_subgraph.degree()), reverse=True)
+        c_deg_sequence = [d for _, d in c_subgraph.degree()]
         c_deg_sequences.append(c_deg_sequence)
 
         # collect edges within the community - to be removed in the next part
@@ -37,7 +38,7 @@ def get_hcm_degree_distributions(hcm_g: nx.Graph, communities: np.array):
     # get inter community degree sequence
     # 1st remove all edges within communities:
     hcm_g.remove_edges_from(edges_within_cs)
-    b_deg_sequence = sorted((d for n, d in hcm_g.degree()), reverse=True)
+    b_deg_sequence = [d for _, d in hcm_g.degree()]
     return b_deg_sequence, c_deg_sequences
 
 
@@ -53,16 +54,12 @@ if "__main__" == __name__:
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
                                                gen_param=lam)
-    g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
+    g = hierarchical_configuration_model_algo2(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
 
     b_deg_dist, c_deg_dists = get_hcm_degree_distributions(hcm_g=g, communities=communities)
-    fig, ax = plt.subplots()
-    deg_seq_out = sorted(deg_seq_out, reverse=True)
 
-    ax.plot(b_deg_dist, color='green', label='Realized degree sequence')
-    ax.plot(deg_seq_out, color='red', label='True degree sequence')
-    ax.legend(loc='upper left')
-    plt.show()
+    plot_degree_seq_comparison(deg_seq_a=b_deg_dist, deg_seq_b=deg_seq_out, sort_sequences=True)
+
 
 
 
