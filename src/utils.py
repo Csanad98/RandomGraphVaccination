@@ -66,11 +66,15 @@ def init_infected(n: int, prop_lr_com_size: float,
     of the simulation
     """
     infected = []
+    # n_infected_lr = 0
+    # n_infected_hr = 0
     for i in range(n):
         if i < int(prop_lr_com_size*n) and np.random.binomial(1, prop_int_inf*(1-prop_int_inf_hr)) == 1:
             infected += [i]
+            # n_infected_lr+=1
         elif np.random.binomial(1, prop_int_inf*prop_int_inf_hr) == 1:
             infected += [i]
+            # n_infected_hr+=1
     return infected
 
 
