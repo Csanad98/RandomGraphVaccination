@@ -1,6 +1,8 @@
 import networkx as nx
 import numpy as np
 
+
+#for testing
 from random_graphs.hierarchical_cm import hierarchical_configuration_model
 
 from matplotlib import pyplot as plt
@@ -10,6 +12,7 @@ from utils import create_community_random_color_map, community_map_from_communit
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
     generate_community_degree_seq, generate_poisson_degree_seq
 from node_attributes import attr_assign
+
 
 
 def time_step_simulation(g: nx.Graph, seed: int):
