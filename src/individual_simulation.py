@@ -13,6 +13,8 @@ from random_graphs.degree_sequence_generator import generate_power_law_degree_se
     generate_community_degree_seq, generate_poisson_degree_seq
 from node_attributes import attr_assign
 
+from pylab import plot, array
+
 
 def time_step_simulation(g: nx.Graph, seed: int):
     """
@@ -24,12 +26,16 @@ def time_step_simulation(g: nx.Graph, seed: int):
     changes according to the outcome.
     """
     np.random.seed(seed)
+    deaths = {"high_risk": 0, "low_risk": 0}
+    recoveries = {"high_risk": 0, "low_risk": 0}
+    infections = {"high_risk": 0, "low_risk": 0}
     for i in [x for x, y in g.nodes(data=True) if y['health'] > 0]:
         # Check all healthy neighbors of i
         for j in [x for x, y in g.subgraph(list(g.neighbors(i))).nodes(data=True) if y['health'] == 0]:
             # infect the neighbor with probability of node infectivity
             if np.random.binomial(1, nx.get_node_attributes(g, "infectivity")[i]) == 1:
                 nx.set_node_attributes(g, {j: 1}, 'health')
+                infections[nx.get_node_attributes(g, "risk_group")[j]] += 1
         # Check if node is not at the end of illness
         if nx.get_node_attributes(g, "health")[i] < nx.get_node_attributes(g, "outcome")[i]:
             # If not add one day to the health timeline
@@ -37,11 +43,15 @@ def time_step_simulation(g: nx.Graph, seed: int):
         # Otherwise check if outcome is death
         elif nx.get_node_attributes(g, "outcome")[i] == 18:
             nx.set_node_attributes(g, {i: -2}, 'health')
+            deaths[nx.get_node_attributes(g, "risk_group")[i]] += 1
         # Otherwise we have recovery
         else:
             nx.set_node_attributes(g, {i: -1}, 'health')
+            recoveries[nx.get_node_attributes(g, "risk_group")[i]] += 1
 
-    return g
+    return g, (deaths["high_risk"], deaths["low_risk"]), \
+           (recoveries["high_risk"], recoveries["low_risk"]), \
+           (infections["high_risk"], infections["low_risk"])
 
 
 def singe_graph_simulation(seed: int,
@@ -84,6 +94,8 @@ def singe_graph_simulation(seed: int,
     nx.draw_spring(g, with_labels=False, width=0.3, edgecolors="k", alpha=0.9, node_color=color_map, node_size=100)
     # plot graph
     plt.show()
+
+    # assign attributes to graph nodes
     g = attr_assign(g=g,
                     deg_seq_out=deg_seq_out,
                     deg_seq_in=deg_seq_in,
@@ -92,16 +104,40 @@ def singe_graph_simulation(seed: int,
                     prop_hr_lr=prop_hr_lr,
                     seed=seed)
     # set the initially infected individuals
-    infected = init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
-                             prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
+    infected= init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
+                                         prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
     nx.set_node_attributes(g, dict(zip(infected, len(infected) * [1])), 'health')
 
+    # time simulation
+    deaths_hr = []
+    deaths_lr = []
+    recoveries_hr = []
+    recoveries_lr = []
+    infections_hr = []
+    infections_lr = []
     for i in range(0, n_days):
-        g = time_step_simulation(g, seed)
+        # run one step of the simulation
+        g, d, r, inf = time_step_simulation(g, seed)
+        # keep track of deaths, recoveries and new infections in that day.
+        deaths_hr += [d[0]]
+        deaths_lr += [d[1]]
+        recoveries_hr += [r[0]]
+        recoveries_lr += [r[1]]
+        infections_hr += [inf[0]]
+        infections_lr += [inf[1]]
         seed += 1
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
+    plt.plot(range(n_days), deaths_hr)
+    # plt.plot(range(n_days), deaths_lr)
+    plt.plot(range(n_days), recoveries_hr)
+    # plt.plot(range(n_days), recoveries_lr)
+    plt.plot(range(n_days), infections_hr)
+    # plt.plot(range(n_days), infections_lr)
+
+    plt.show()
+
 
 
 if "__main__" == __name__:
-    singe_graph_simulation(n=1000, seed=1, prop_int_inf_hr=0.2)
+    singe_graph_simulation(n=600, seed=1, prop_int_inf_hr=0.2, n_days=120)

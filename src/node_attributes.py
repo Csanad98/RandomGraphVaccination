@@ -48,8 +48,10 @@ def attr_assign(g: nx.Graph,
     # Adding Health attribute
     nx.set_node_attributes(g, dict(zip(range(n), [0] * n)), "health")
 
-    # Adding Risk Group attribute
+    # Adding Risk Group, Outcome and infectivity attributes
     risk_group_dict = {}
+    outcome_dict = {}
+    infectivity_dict = {}
     np.random.seed(1)
     # Set last low risk community index be around 80% of the number of communities
     # last_low_risk_community = int(len(nx.get_node_attributes(g,"community"))*0.8)
@@ -63,22 +65,15 @@ def attr_assign(g: nx.Graph,
             risk_group_dict[i] = rbin(prop_hr_lr, "high_risk", "low_risk")
         else:
             risk_group_dict[i] = rbin(prop_hr_hr, "high_risk", "low_risk")
-    nx.set_node_attributes(g, risk_group_dict, "risk_group")
-
-    # Adding Outcome and infectivity attributes
-    outcome_dict = {}
-    infectivity_dict = {}
-
-    p1 = reproduction_number / (days_lr_death * (deg_seq_out[i] + deg_seq_in[i]))
-    p2 = reproduction_number / (days_lr_recovery * (deg_seq_out[i] + deg_seq_in[i]))
-    p3 = reproduction_number / (days_hr_death * (deg_seq_out[i] + deg_seq_in[i]))
-    p4 = reproduction_number / (days_hr_recovery * (deg_seq_out[i] + deg_seq_in[i]))
-    for i in range(n):
-        # if element in Low Risk group then choose different probability of death and recovery and infectivity
-        if nx.get_node_attributes(g, "risk_group")[i] == "low_risk":
-            outcome_dict[i], infectivity_dict[i] = rbin(death_prob_lr, (days_lr_death, p1), (days_lr_recovery, p2))
+        if risk_group_dict[i] == "low_risk":
+            outcome_dict[i], infectivity_dict[i] = rbin(death_prob_lr,
+                                                        (days_lr_death, reproduction_number / (days_lr_death * (deg_seq_out[i] + deg_seq_in[i]))),
+                                                        (days_lr_recovery, reproduction_number / (days_lr_recovery * (deg_seq_out[i] + deg_seq_in[i]))))
         else:
-            outcome_dict[i], infectivity_dict[i] = rbin(death_prob_hr, (days_hr_death, p3), (days_hr_recovery, p4))
+            outcome_dict[i], infectivity_dict[i] = rbin(death_prob_hr,
+                                                        (days_hr_death, reproduction_number / (days_hr_death * (deg_seq_out[i] + deg_seq_in[i]))),
+                                                        (days_hr_recovery, reproduction_number / (days_hr_recovery * (deg_seq_out[i] + deg_seq_in[i]))))
+    nx.set_node_attributes(g, risk_group_dict, "risk_group")
     nx.set_node_attributes(g, outcome_dict, "outcome")
     nx.set_node_attributes(g, infectivity_dict, "infectivity")
 
