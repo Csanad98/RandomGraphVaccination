@@ -3,7 +3,7 @@ import numpy as np
 
 
 #for testing
-from random_graphs.hierarchical_cm import hierarchical_configuration_model
+from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
 
 from matplotlib import pyplot as plt
 
@@ -39,25 +39,27 @@ def time_step_simulation(g: nx.Graph, seed: int):
 
 if "__main__" == __name__:
     seed = 1
-    # deg_seq_in = np.array([1, 3, 3, 3, 4, 4, 4, 4])
-    # deg_seq_out = np.array([1, 3, 3, 3, 2, 2, 2, 2])
-    # communities = np.array([0, 0, 1, 1, 2, 2, 2, 2])
-    community_sizes = community_sizes_generator(1000)
+    n = 700
+    community_sizes = community_sizes_generator(n=n, prop_lr_com_size=0.45, seed=seed)
     tau = 2.8
     p = 0.05
     lam = 15
+    # proportion of high risk individuals in high risk groups
     prop_hr_hr = 0.7
+    # proportion of high risk individuals in low risk groups
     prop_hr_lr = 0
-    n = sum(community_sizes)
+    # Generate sequences of degree and community distributions
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
                                                gen_param=lam)
     color_map = create_community_random_color_map(communities)
-    g = hierarchical_configuration_model(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
+    # generate hierarchical configuration model
+    g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
-    nx.draw_spring(g, with_labels=True, node_color=color_map)
+    nx.draw_spring(g, with_labels=False, width=0.3, edgecolors="k", alpha=0.9, node_color=color_map, node_size = 100)
+    # plot graph
     plt.show()
     g = attr_assign(g=g,
                     deg_seq_out=deg_seq_out,
