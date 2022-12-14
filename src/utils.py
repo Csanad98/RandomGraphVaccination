@@ -54,3 +54,23 @@ def correct_deg_sum_to_be_even(seq: np.array):
     if np.sum(seq) % 2 != 0:
         seq[0] += 1
     return seq
+
+def init_infected(n: int, prop_lr_com_size: float,
+                  prop_int_inf: float, prop_int_inf_hr: float = 0.5):
+    """
+    :param n: size of population
+    :param prop_lr_com_size: proportion of nodes in the low risk community
+    :param prop_int_inf: proportion of initially infected nodes
+    :param prop_int_inf_hr: proportion of high risk in the initially infected nodes
+    :return: infected: a tuple including the nodes that are infected at the start
+    of the simulation
+    """
+    infected = []
+    for i in range(n):
+        if i < int(prop_lr_com_size*n) and np.random.binomial(1, prop_int_inf*(1-prop_int_inf_hr)) == 1:
+            infected += [i]
+        elif np.random.binomial(1, prop_int_inf*prop_int_inf_hr) == 1:
+            infected += [i]
+    return infected
+
+
