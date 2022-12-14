@@ -1,20 +1,18 @@
 from typing import List
 
 import numpy as np
-from matplotlib import colors, pylab
 
 
-def create_community_color_map(communities: np.array) -> np.array:
+def create_community_random_color_map(communities: np.array, seed: int = 0) -> np.array:
     """
-    Assigns a color to each node, such that nodes within one community have the same color.
-    Note, method is adapted from:
-    https://stackoverflow.com/questions/33596491/extract-matplotlib-colormap-in-hex-format/33597599#33597599
+    Assigns a random color to each node, such that nodes within one community have the same color.
+    :param seed:
     :param communities: 1d array of integers, ith value indicates the community id of the ith node
     :return: color_map: a list of colors
     """
+    np.random.seed(seed)
     n = communities.shape[0]
-    cmap = pylab.cm.get_cmap('hsv', n)
-    color_list = [colors.rgb2hex(cmap(i)[:3]) for i in range(cmap.N)]
+    color_list = [np.random.rand(3,) for _ in range(n)]
     community_cmap = np.array([color_list[i] for i in communities])
     return community_cmap
 
