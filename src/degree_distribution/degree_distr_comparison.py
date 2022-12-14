@@ -1,8 +1,12 @@
 import random
+from typing import Callable, List
 
 import networkx as nx
 import numpy as np
+import scipy
 from matplotlib import pyplot as plt
+import statsmodels as sm
+from scipy.stats import kstest
 
 from plots.degree_distribution_plots import plot_degree_seq_comparison
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, generate_community_degree_seq, \
@@ -42,10 +46,15 @@ def get_hcm_degree_distributions(hcm_g: nx.Graph, communities: np.array):
     return b_deg_sequence, c_deg_sequences
 
 
+def ks_test_power_law(tau: float, deg_seq: np.array):
+    test_result = kstest(deg_seq, scipy.stats.powerlaw.rvs(a=tau, size=len(deg_seq)))
+    return test_result
+
+
 if "__main__" == __name__:
     seed = 1
     random.seed(seed)
-    community_sizes = [random.randint(5, 15) for _ in range(100)]
+    community_sizes = [random.randint(5, 15) for _ in range(10)]
     tau = 2.8
     lam = 15
     n = sum(community_sizes)
@@ -54,11 +63,12 @@ if "__main__" == __name__:
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
                                                gen_param=lam)
-    g = hierarchical_configuration_model_algo2(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
+    g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
 
     b_deg_dist, c_deg_dists = get_hcm_degree_distributions(hcm_g=g, communities=communities)
 
     plot_degree_seq_comparison(deg_seq_a=b_deg_dist, deg_seq_b=deg_seq_out, sort_sequences=True)
+    print(ks_test_power_law(tau=20, deg_seq=deg_seq_out))
 
 
 
