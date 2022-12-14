@@ -43,6 +43,8 @@ if "__main__" == __name__:
     tau = 2.8
     p = 0.05
     lam = 15
+    prop_hr_hr = 0.7
+    prop_hr_lr = 0
     n = sum(community_sizes)
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
@@ -58,8 +60,8 @@ if "__main__" == __name__:
                     deg_seq_out=deg_seq_out,
                     deg_seq_in=deg_seq_in,
                     communities=communities,
-                    prop_hr_hr=0.7,
-                    prop_hr_lr=0,
+                    prop_hr_hr=prop_hr_hr,
+                    prop_hr_lr=prop_hr_lr,
                     seed=seed)
     nx.set_node_attributes(g, {1: 1, 3: 1, 4: 1, 10: 1, 100: 1, 200: 1, 300: 1, 400: 1, 500: 1, 604: 1, 640: 1, 603: 1,
                                622: 1, 677: 1, 690: 1, 688: 1}, 'health')
