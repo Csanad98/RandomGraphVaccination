@@ -1,5 +1,8 @@
+import time
+
 import networkx as nx
 import numpy as np
+import time
 
 # for testing
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
@@ -29,41 +32,44 @@ def time_step_simulation(g: nx.Graph, seed: int):
     deaths = {"high_risk": 0, "low_risk": 0}
     recoveries = {"high_risk": 0, "low_risk": 0}
     infections = {"high_risk": 0, "low_risk": 0}
-    for i in [x for x, y in g.nodes(data=True) if y['health'] > 0]:
+    health_dict = {}
+    for x1, y1 in [(x,y) for x, y in g.nodes(data=True) if y['health'] > 0]:
         # Check all healthy neighbors of i
-        for j in [x for x, y in g.subgraph(list(g.neighbors(i))).nodes(data=True) if y['health'] == 0]:
+        for x2, y2 in [(x,y) for x, y in g.subgraph(list(g.neighbors(x1))).nodes(data=True) if y['health'] == 0]:
             # infect the neighbor with probability of node infectivity
-            if np.random.binomial(1, nx.get_node_attributes(g, "infectivity")[i]) == 1:
-                nx.set_node_attributes(g, {j: 1}, 'health')
-                infections[nx.get_node_attributes(g, "risk_group")[j]] += 1
+            if np.random.binomial(1, y2["infectivity"]) == 1:
+                health_dict[x2]=1
+                infections[y2["risk_group"]] += 1
         # Check if node is not at the end of illness
-        if nx.get_node_attributes(g, "health")[i] < nx.get_node_attributes(g, "outcome")[i]:
+        if y1["health"] < y1["outcome"]:
             # If not add one day to the health timeline
-            nx.set_node_attributes(g, {i: nx.get_node_attributes(g, "health")[i] + 1}, 'health')
+            health_dict[x1] = y1["health"]+1
         # Otherwise check if outcome is death
-        elif nx.get_node_attributes(g, "outcome")[i] == 18:
-            nx.set_node_attributes(g, {i: -2}, 'health')
-            deaths[nx.get_node_attributes(g, "risk_group")[i]] += 1
+        elif y1["outcome"] == 18:
+            health_dict[x1] = -2
+            deaths[y1["risk_group"]] += 1
         # Otherwise we have recovery
         else:
-            nx.set_node_attributes(g, {i: -1}, 'health')
-            recoveries[nx.get_node_attributes(g, "risk_group")[i]] += 1
+            health_dict[x1] = -1
+            recoveries[y1["risk_group"]] += 1
+
+    nx.set_node_attributes(g, health_dict, 'health')
 
     return g, (deaths["high_risk"], deaths["low_risk"]), \
            (recoveries["high_risk"], recoveries["low_risk"]), \
            (infections["high_risk"], infections["low_risk"])
 
 
-def singe_graph_simulation(seed: int,
-                           n: int = 1000,
-                           tau: float = 2.8,
-                           lam: float = 15,
-                           prop_lr_com_size: float = 0.45,
-                           prop_int_inf: float = 0.05,
-                           prop_int_inf_hr: float = 0.5,
-                           prop_hr_hr: float = 0.7,
-                           prop_hr_lr: float = 0,
-                           n_days: int = 365):
+def single_graph_simulation(seed: int,
+                            n: int = 1000,
+                            tau: float = 2.8,
+                            lam: float = 15,
+                            prop_lr_com_size: float = 0.45,
+                            prop_int_inf: float = 0.05,
+                            prop_int_inf_hr: float = 0.5,
+                            prop_hr_hr: float = 0.7,
+                            prop_hr_lr: float = 0,
+                            n_days: int = 365):
     """
     Creates a graph and simulates n_days days of the graph.
     :param n: number of people
@@ -78,23 +84,29 @@ def singe_graph_simulation(seed: int,
     :param n_days: number of days simulated
     :return:
     """
-
+    t0 = time.time()
     # generate sequence of community sizes
     community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, seed=seed)
     # Generate sequences of degree and community distributions
+    print("community size generation")
+    print(time.time()-t0)
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
                                                gen_param=lam)
-    color_map = create_community_random_color_map(communities)
+    print("hcm parameters generation")
+    print(time.time() - t0)
     # generate hierarchical configuration model
     g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
-    pos = nx.spring_layout(g, seed=seed)  # Seed layout for reproducibility
-    nx.draw_spring(g, with_labels=False, width=0.3, edgecolors="k", alpha=0.9, node_color=color_map, node_size=100)
-    # plot graph
-    plt.show()
-
+    print("hcm generation")
+    print(time.time() - t0)
+    # color_map = create_community_random_color_map(communities)
+    # nx.draw_spring(g, with_labels=False, width=0.3, edgecolors="k", alpha=0.9, node_color=color_map, node_size=80)
+    # # plot graph
+    # plt.show()
+    # print("graph plotting")
+    # print(time.time() - t0)
     # assign attributes to graph nodes
     g = attr_assign(g=g,
                     deg_seq_out=deg_seq_out,
@@ -103,11 +115,14 @@ def singe_graph_simulation(seed: int,
                     prop_hr_hr=prop_hr_hr,
                     prop_hr_lr=prop_hr_lr,
                     seed=seed)
+    print("attribute assignment")
+    print(time.time() - t0)
     # set the initially infected individuals
-    infected= init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
-                                         prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
+    infected = init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
+                             prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
     nx.set_node_attributes(g, dict(zip(infected, len(infected) * [1])), 'health')
-
+    print("initially infected")
+    print(time.time() - t0)
     # time simulation
     deaths_hr = []
     deaths_lr = []
@@ -126,6 +141,9 @@ def singe_graph_simulation(seed: int,
         infections_hr += [inf[0]]
         infections_lr += [inf[1]]
         seed += 1
+    print("simulation of all days")
+    print(time.time() - t0)
+
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
     plt.plot(range(n_days), deaths_hr)
@@ -138,6 +156,6 @@ def singe_graph_simulation(seed: int,
     plt.show()
 
 
-
 if "__main__" == __name__:
-    singe_graph_simulation(n=600, seed=1, prop_int_inf_hr=0.2, n_days=120)
+    seed=1
+    single_graph_simulation(n=20000, seed=seed, prop_int_inf_hr=0.2, n_days=365)
