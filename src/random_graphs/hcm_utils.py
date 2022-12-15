@@ -3,17 +3,13 @@ import networkx as nx
 
 
 def create_half_edges_between_communities(deg_seq_out, communities):
-    num_half_edges = np.sum(deg_seq_out)
-    half_edges = np.zeros((num_half_edges, 2))
-    half_edge_index = 0
+    # make list of n empty lists where n the number of communities
+    half_edges = [[] for _ in range(len(np.unique(communities)))]
 
     # setup half edge map
-    for v_index in range(len(deg_seq_out)):
-        for h in range(deg_seq_out[v_index]):
-            half_edges[half_edge_index][0] = v_index  # first item in the tuple indicates vertex index of h.e.
-            # 2nd item in the tuple indicates community index of h.e.
-            half_edges[half_edge_index][1] = communities[v_index]
-            half_edge_index += 1
+    for v_index in range(len(deg_seq_out)):  # for all nodes
+        for h in range(deg_seq_out[v_index]):  # for all half_edges of node
+            half_edges[int(communities[v_index])].append(v_index)  # add node to list of its community
     return half_edges
 
 

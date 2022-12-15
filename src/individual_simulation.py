@@ -158,4 +158,4 @@ def single_graph_simulation(seed: int,
 
 if "__main__" == __name__:
     seed=1
-    single_graph_simulation(n=20000, seed=seed, prop_int_inf_hr=0.2, n_days=365)
+    single_graph_simulation(n=10000, seed=seed, prop_int_inf_hr=0.2, n_days=365)

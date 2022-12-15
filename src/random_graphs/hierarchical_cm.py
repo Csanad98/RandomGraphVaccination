@@ -39,29 +39,42 @@ def hierarchical_configuration_model_algo1(deg_seq_in: np.array,
     half_edges = create_half_edges_between_communities(deg_seq_out, communities)
 
     # while we have half-edges left to match:
-    while half_edges.shape[0] != 0:
-        # count which community has the most h.e.-s
-        comm_he_count = np.bincount(half_edges[:, 1].astype(int))
-        # pick first half edge uniformly within community with most h.e.-s
-        comm_most_he_index = np.argmax(comm_he_count)
-        half_edge_indices_of_community_with_most_hes = np.where(half_edges[:, 1] == comm_most_he_index)[0]
+    num_matched = 0
+
+    while sum([len(x) for x in half_edges]) != 0:
+        first_community = np.argmax([len(x) for x in half_edges])
 
         # pick uniform h.e. within the community with most h.e.-s
-        first = random.randint(0, len(half_edge_indices_of_community_with_most_hes) - 1)
-        first_he_id = half_edge_indices_of_community_with_most_hes[first]
-        first_community = half_edges[first_he_id][1]
-        first_vertex_id = half_edges[first_he_id][0]
+        first = random.randint(0, len(half_edges[first_community]) - 1)
+        first_id = half_edges[first_community][first]
 
-        half_edge_indices_of_other_communities = np.where(half_edges[:, 1] != first_community)[0]
+        # pick uniform h.r. outside the community
+        leftover_he = half_edges[:first_community] + half_edges[first_community + 1:]
+        second_big = random.randint(0, len(sum(leftover_he, [])) - 1)
 
-        second = random.randint(0, len(half_edge_indices_of_other_communities) - 1)
-        second_he_id = half_edge_indices_of_other_communities[second]
-        second_vertex_id = half_edges[second_he_id][0]
+        # find in which community it belongs to
+        second_community = 0
+        checker = len(leftover_he[second_community])
+        while checker - 1 < second_big:
+            second_community += 1
+            checker += len(leftover_he[second_community])
+        # index of second he inside its community list
+        second = second_big - checker + len(leftover_he[second_community])
+        # second he
+        second_id = leftover_he[second_community][second]
 
-        full_graph.add_edge(first_vertex_id, second_vertex_id)
+        # if the second community was later than the first one then add one
+        if second_big >= len(sum(half_edges[:first_community], [])):
+            second_community += 1
+
+        #add the edge
+        full_graph.add_edge(first_id, second_id)
 
         # remove matched half edges from h.e. list
-        half_edges = np.delete(half_edges, [first_he_id, second_he_id], axis=0)
+        del half_edges[first_community][first]
+        del half_edges[second_community][second]
+
+
 
     return full_graph
 
