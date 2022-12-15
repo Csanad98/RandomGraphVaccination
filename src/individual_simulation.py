@@ -139,7 +139,8 @@ def single_graph_simulation(seed: int,
                             prop_hr_hr: float = 0.7,
                             prop_hr_lr: float = 0,
                             n_days: int = 365,
-                            vaccination_strategy: int = 0):
+                            vaccination_strategy: int = 0,
+                            vac_stop: float = 1):
     """
     Creates a graph and simulates n_days days of the graph.
     :param n: number of people
@@ -217,9 +218,13 @@ def single_graph_simulation(seed: int,
             infections_hr += [inf[0]]
             infections_lr += [inf[1]]
             # run daily vaccinations
-            g, vac = random_vaccination(g=g, seed=seed, vacc_percentage=0.004)
-            vaccinations_hr += [vac[0]]
-            vaccinations_lr += [vac[1]]
+            if vac_stop * g.number_of_nodes() > sum(recoveries_lr + recoveries_hr + vaccinations_hr + vaccinations_lr):
+                g, vac = random_vaccination(g=g, seed=seed, vacc_percentage=0.004)
+                vaccinations_hr += [vac[0]]
+                vaccinations_lr += [vac[1]]
+            else:
+                vaccinations_hr += [0]
+                vaccinations_lr += [0]
             seed += 1
     print("simulation of all days")
     print(time.time() - t0)
@@ -234,7 +239,8 @@ if "__main__" == __name__:
     prop_int_hr_inf = 0.2
     n_days = 365
     g, deaths_hr, deaths_lr, recoveries_hr, recoveries_lr, infections_hr, infections_lr, vaccinations_hr, \
-    vaccinations_lr = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days, vaccination_strategy=0)
+    vaccinations_lr = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
+                                              vaccination_strategy=1, vac_stop=1)
 
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
