@@ -39,8 +39,6 @@ def hierarchical_configuration_model_algo1(deg_seq_in: np.array,
     half_edges = create_half_edges_between_communities(deg_seq_out, communities)
 
     # while we have half-edges left to match:
-    num_matched = 0
-
     while sum([len(x) for x in half_edges]) != 0:
         first_community = np.argmax([len(x) for x in half_edges])
 
