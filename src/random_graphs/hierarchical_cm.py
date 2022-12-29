@@ -111,7 +111,7 @@ def hierarchical_configuration_model_algo2(deg_seq_in: np.array,
 if "__main__" == __name__:
     seed = 1
     random.seed(seed)
-    community_sizes = [random.randint(5, 15) for _ in range(10)]
+    community_sizes = [random.randint(5, 15) for _ in range(20)]
     tau = 2.8
     p = 0.05
     lam = 15
@@ -124,5 +124,5 @@ if "__main__" == __name__:
     color_map = create_community_random_color_map(communities)
     g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     pos = nx.kamada_kawai_layout(g)  # Seed layout for reproducibility
-    nx.draw_spring(g, with_labels=True, node_color=color_map)
+    nx.draw_spring(g, with_labels=False, node_color=color_map, node_size=50)
     plt.show()
