@@ -53,7 +53,7 @@ def attr_assign(g: nx.Graph,
     outcome_dict = {}
     infectivity_dict = {}
     np.random.seed(1)
-    for i, j in [(x,y) for x, y in g.nodes(data=True)]:
+    for i, j in g.nodes.items():
         # risk group attribute
         if j["community"] == 0:  # if in low risk community
             risk_group_dict[i] = rbin(prop_hr_lr, "high_risk", "low_risk")
