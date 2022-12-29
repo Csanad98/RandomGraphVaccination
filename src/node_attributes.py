@@ -7,8 +7,6 @@ def rbin(p: float, out_true, out_false):
 
 
 def attr_assign(g: nx.Graph,
-                deg_seq_out: np.array,
-                deg_seq_in: np.array,
                 communities: np.array,
                 prop_hr_hr: float,
                 prop_hr_lr: float,
@@ -22,8 +20,6 @@ def attr_assign(g: nx.Graph,
                 days_lr_recovery: int = 17):
     """
     g: Random Graph
-    deg_seq_out: The inter-community degree distribution
-    deg_seq_in: The inside-community degree distribution
     communities: list containing the indexes refering the to the community of the nodes
     prop_hr_hr: proportion of high-risk people inside high risk communities
     prop_hr_lr: proportion of high-risk people inside low risk communities
@@ -63,19 +59,15 @@ def attr_assign(g: nx.Graph,
         if risk_group_dict[node] == "low_risk":  # if low risk individual
             outcome_dict[node], infectivity_dict[node] = rbin(death_prob_lr,
                                                               (days_lr_death, reproduction_number / (
-                                                                      days_lr_death * (
-                                                                          deg_seq_out[node] + deg_seq_in[node]))),
+                                                                      days_lr_death * g.degree[node])),
                                                               (days_lr_recovery,
-                                                               reproduction_number / (days_lr_recovery * (
-                                                                       deg_seq_out[node] + deg_seq_in[node]))))
+                                                               reproduction_number / (days_lr_recovery * g.degree[node])))
         else:  # if high risk individual
             outcome_dict[node], infectivity_dict[node] = rbin(death_prob_hr,
                                                               (days_hr_death, reproduction_number / (
-                                                                      days_hr_death * (
-                                                                          deg_seq_out[node] + deg_seq_in[node]))),
+                                                                      days_hr_death * g.degree[node])),
                                                               (days_hr_recovery,
-                                                               reproduction_number / (days_hr_recovery * (
-                                                                       deg_seq_out[node] + deg_seq_in[node]))))
+                                                               reproduction_number / (days_hr_recovery * g.degree[node])))
     nx.set_node_attributes(g, risk_group_dict, "risk_group")
     nx.set_node_attributes(g, outcome_dict, "outcome")
     nx.set_node_attributes(g, infectivity_dict, "infectivity")

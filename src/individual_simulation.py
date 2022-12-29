@@ -71,8 +71,6 @@ def single_graph_generator(seed: int,
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
-                    deg_seq_out=deg_seq_out,
-                    deg_seq_in=deg_seq_in,
                     communities=communities,
                     prop_hr_hr=prop_hr_hr,
                     prop_hr_lr=prop_hr_lr,
