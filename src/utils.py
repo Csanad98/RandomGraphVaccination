@@ -12,7 +12,7 @@ def create_community_random_color_map(communities: np.array, seed: int = 0) -> n
     """
     np.random.seed(seed)
     n = communities.shape[0]
-    color_list = [np.random.rand(3,) for _ in range(n)]
+    color_list = [np.random.rand(3, ) for _ in range(n)]
     community_cmap = np.array([color_list[i] for i in communities])
     return community_cmap
 
@@ -36,9 +36,9 @@ def community_sizes_generator(n: int, prop_lr_com_size: float = 0.45, prop_com_s
     """
     np.random.seed(seed)
     # First community is low risk and has half of the population
-    communities = [int(prop_lr_com_size*n)]
+    communities = [int(prop_lr_com_size * n)]
     # The rest
-    leftovers = n - int(prop_lr_com_size*n)
+    leftovers = n - int(prop_lr_com_size * n)
     i = 1
     avg_com_size = n * prop_com_size
     while leftovers > 3 * avg_com_size / 2:
@@ -55,6 +55,7 @@ def correct_deg_sum_to_be_even(seq: np.array):
         seq[0] += 1
     return seq
 
+
 def init_infected(n: int, prop_lr_com_size: float,
                   prop_int_inf: float, prop_int_inf_hr: float = 0.5):
     """
@@ -69,12 +70,10 @@ def init_infected(n: int, prop_lr_com_size: float,
     # n_infected_lr = 0
     # n_infected_hr = 0
     for i in range(n):
-        if i < int(prop_lr_com_size*n) and np.random.binomial(1, prop_int_inf*(1-prop_int_inf_hr)) == 1:
+        if i < int(prop_lr_com_size * n) and np.random.binomial(1, prop_int_inf * (1 - prop_int_inf_hr)) == 1:
             infected += [i]
             # n_infected_lr+=1
-        elif np.random.binomial(1, prop_int_inf*prop_int_inf_hr) == 1:
+        elif np.random.binomial(1, prop_int_inf * prop_int_inf_hr) == 1:
             infected += [i]
             # n_infected_hr+=1
     return infected
-
-

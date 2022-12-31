@@ -19,9 +19,9 @@ def random_vaccination(g: nx.Graph,
     # create list with healthy nodes
     temp_list = [(x, y) for x, y in g.nodes(data=True) if y['health'] == 0]
     vaccinations = {"high_risk": 0, "low_risk": 0}
-    to_be_vaccinated = random.sample(temp_list, min(int(vacc_percentage * g.number_of_nodes()),len(temp_list)))
+    to_be_vaccinated = random.sample(temp_list, min(int(vacc_percentage * g.number_of_nodes()), len(temp_list)))
     # create dictionary for attribute assignment
-    new_vacc_dict = {x:-1 for x, y in to_be_vaccinated}
+    new_vacc_dict = {x: -1 for x, y in to_be_vaccinated}
     # check amount of vaccinations per risk group
     for x1, y1 in to_be_vaccinated:  # for all healthy nodes
         vaccinations[y1["risk_group"]] += 1

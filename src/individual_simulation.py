@@ -45,29 +45,25 @@ def single_graph_generator(seed: int,
     t0 = time.time()
     # generate sequence of community sizes
     community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, seed=seed)
-    print("community size generation")
-    print(time.time() - t0)
-
+    print("community size generation: {:.2f}".format(time.time() - t0))
     # generate sequences of degree and community distributions
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
                                                gen_param=lam)
-    print("hcm parameters generation")
-    print(time.time() - t0)
+    print("hcm parameters generation: {:.2f}s".format(time.time() - t0))
 
     # generate hierarchical configuration model
     g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
-    print("hcm generation")
-    print(time.time() - t0)
+    print("hcm generation: {:.2f}s".format(time.time() - t0))
 
-    # color_map = create_community_random_color_map(communities)
-    # nx.draw_spring(g, with_labels=False, width=0.3, edgecolors="k", alpha=0.9, node_color=color_map, node_size=80)
-    # # plot graph
-    # plt.show()
-    # print("graph plotting")
-    # print(time.time() - t0)
+    # if graph is small enough, plot it
+    if n <= 1000:
+        color_map = create_community_random_color_map(communities)
+        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+        plt.show()
+        print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
@@ -75,14 +71,12 @@ def single_graph_generator(seed: int,
                     prop_hr_hr=prop_hr_hr,
                     prop_hr_lr=prop_hr_lr,
                     seed=seed)
-    print("attribute assignment")
-    print(time.time() - t0)
-
+    print("attribute assignment: {:.2f}s".format(time.time() - t0))
     # set the initially infected individuals
     infected = init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
                              prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
     nx.set_node_attributes(g, dict(zip(infected, len(infected) * [1])), 'health')
-
+    print("initial infections added: {:.2f}s".format(time.time() - t0))
     return g
 
 
@@ -99,28 +93,27 @@ def time_step_simulation(g: nx.Graph, seed: int):
     deaths = {"high_risk": 0, "low_risk": 0}
     recoveries = {"high_risk": 0, "low_risk": 0}
     infections = {"high_risk": 0, "low_risk": 0}
-    health_dict = {}
-    for x1, y1 in [(x, y) for x, y in g.nodes(data=True) if y['health'] > 0]:
+    # iterate through nodes that are infected (and still alive)
+    for node, node_data in filter(lambda xy: xy[1]['health'] > 0, g.nodes.items()):
         # Check all healthy neighbors of i
-        for x2, y2 in [(x, y) for x, y in g.subgraph(list(g.neighbors(x1))).nodes(data=True) if y['health'] == 0]:
+        for n_node, n_node_data in \
+                filter(lambda xy: xy[1]['health'] == 0, g.subgraph(list(g.neighbors(node))).nodes.items()):
             # infect the neighbor with probability of node infectivity
-            if np.random.binomial(1, y2["infectivity"]) == 1:
-                health_dict[x2] = 1
-                infections[y2["risk_group"]] += 1
+            if np.random.binomial(1, n_node_data["infectivity"]) == 1:
+                n_node_data["health"] = 1
+                infections[n_node_data["risk_group"]] += 1
         # Check if node is not at the end of illness
-        if y1["health"] < y1["outcome"]:
+        if node_data["health"] < node_data["outcome"]:
             # If not add one day to the health timeline
-            health_dict[x1] = y1["health"] + 1
+            node_data["health"] += 1
         # Otherwise check if outcome is death
-        elif y1["outcome"] == 18:
-            health_dict[x1] = -2
-            deaths[y1["risk_group"]] += 1
+        elif node_data["outcome"] == 18:
+            node_data["health"] = -2
+            deaths[node_data["risk_group"]] += 1
         # Otherwise we have recovery
         else:
-            health_dict[x1] = -1
-            recoveries[y1["risk_group"]] += 1
-
-    nx.set_node_attributes(g, health_dict, 'health')
+            node_data["health"] = -1
+            recoveries[node_data["risk_group"]] += 1
 
     return g, (deaths["high_risk"], deaths["low_risk"]), \
            (recoveries["high_risk"], recoveries["low_risk"]), \
@@ -233,7 +226,7 @@ def single_graph_simulation(seed: int,
 
 if "__main__" == __name__:
     seed = 1
-    n = 10000
+    n = 1000
     prop_int_hr_inf = 0.2
     n_days = 365
     g, deaths_hr, deaths_lr, recoveries_hr, recoveries_lr, infections_hr, infections_lr, vaccinations_hr, \
