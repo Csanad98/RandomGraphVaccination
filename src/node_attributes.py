@@ -3,6 +3,8 @@ from typing import Tuple
 import networkx as nx
 import numpy as np
 
+import consts
+
 
 def attr_assign(g: nx.Graph,
                 communities: np.array,
@@ -12,10 +14,6 @@ def attr_assign(g: nx.Graph,
                 seed: int = 0,
                 death_prob_hr: float = 0.083,
                 death_prob_lr: float = 0.012,
-                days_hr_death: int = 18,
-                days_hr_recovery: int = 22,
-                days_lr_death: int = 18,
-                days_lr_recovery: int = 17,
                 risk_level_choices: Tuple[str] = ("high_risk", "low_risk")):
     """
     g: Random Graph
@@ -55,17 +53,21 @@ def attr_assign(g: nx.Graph,
         # outcome and infectivity attributes
         if risk_group_dict[node] == "low_risk":  # if low risk individual
             outcome_dict[node] = \
-                np.random.choice(a=[days_lr_death, days_lr_recovery], size=1, p=[death_prob_lr, 1 - death_prob_lr])[0]
+                np.random.choice(a=[consts.DAYS_LR_DEATH, consts.DAYS_LR_RECOVERY],
+                                 size=1,
+                                 p=[death_prob_lr, 1 - death_prob_lr])[0]
             infectivity_dict[node] = \
-                np.random.choice(a=[get_infect_prob(reproduction_number, days_lr_death, g.degree[node]),
-                                    get_infect_prob(reproduction_number, days_lr_recovery, g.degree[node])],
+                np.random.choice(a=[get_infect_prob(reproduction_number, consts.DAYS_LR_DEATH, g.degree[node]),
+                                    get_infect_prob(reproduction_number, consts.DAYS_LR_RECOVERY, g.degree[node])],
                                  size=1, p=[death_prob_lr, 1 - death_prob_lr])[0]
         else:  # if high risk individual
             outcome_dict[node] = \
-                np.random.choice(a=[days_hr_death, days_hr_recovery], size=1, p=[death_prob_hr, 1 - death_prob_hr])[0]
+                np.random.choice(a=[consts.DAYS_HR_DEATH, consts.DAYS_HR_RECOVERY],
+                                 size=1,
+                                 p=[death_prob_hr, 1 - death_prob_hr])[0]
             infectivity_dict[node] = \
-                np.random.choice(a=[get_infect_prob(reproduction_number, days_hr_death, g.degree[node]),
-                                    get_infect_prob(reproduction_number, days_hr_recovery, g.degree[node])],
+                np.random.choice(a=[get_infect_prob(reproduction_number, consts.DAYS_HR_DEATH, g.degree[node]),
+                                    get_infect_prob(reproduction_number, consts.DAYS_HR_RECOVERY, g.degree[node])],
                                  size=1, p=[death_prob_hr, 1 - death_prob_hr])[0]
 
     nx.set_node_attributes(g, risk_group_dict, "risk_group")

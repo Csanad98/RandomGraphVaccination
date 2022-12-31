@@ -5,6 +5,7 @@ import random
 
 from matplotlib import pyplot as plt
 
+import consts
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
 
 from utils import create_community_random_color_map, community_map_from_community_sizes, \
@@ -106,14 +107,28 @@ def time_step_simulation(g: nx.Graph, seed: int):
         if node_data["health"] < node_data["outcome"]:
             # If not add one day to the health timeline
             node_data["health"] += 1
-        # Otherwise check if outcome is death
-        elif node_data["outcome"] == 18:
-            node_data["health"] = -2
-            deaths[node_data["risk_group"]] += 1
-        # Otherwise we have recovery
+        # Otherwise node reached last day of illness, determine outcome
+        elif node_data["risk_group"] == "low_risk":
+            if node_data["health"] == consts.DAYS_LR_DEATH:
+                node_data["health"] = -2
+                deaths[node_data["risk_group"]] += 1
+            elif node_data["health"] == consts.DAYS_LR_RECOVERY:
+                node_data["health"] = -1
+                recoveries[node_data["risk_group"]] += 1
+            else:
+                raise Exception("Inconsistency in LR days consts")
+
+        elif node_data["risk_group"] == "high_risk":
+            if node_data["health"] == consts.DAYS_HR_DEATH:
+                node_data["health"] = -2
+                deaths[node_data["risk_group"]] += 1
+            elif node_data["health"] == consts.DAYS_HR_RECOVERY:
+                node_data["health"] = -1
+                recoveries[node_data["risk_group"]] += 1
+            else:
+                raise Exception("Inconsistency in HR days consts")
         else:
-            node_data["health"] = -1
-            recoveries[node_data["risk_group"]] += 1
+            raise NotImplementedError("Unsupported risk level")
 
     return g, (deaths["high_risk"], deaths["low_risk"]), \
            (recoveries["high_risk"], recoveries["low_risk"]), \
