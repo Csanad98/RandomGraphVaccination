@@ -25,7 +25,6 @@ def attr_assign(g: nx.Graph,
     reproduction number: the average number of individuals infected by an infected individual
     seed: seed
 
-
     Assigns the following attributes to each of the nodes of the random graph:
     community: the community which the node belongs to
     deg_out: the outward degree of the node
@@ -47,7 +46,6 @@ def attr_assign(g: nx.Graph,
     risk_group_dict = {}
     outcome_dict = {}
     infectivity_dict = {}
-    np.random.seed(1)
     for node, node_data in g.nodes.items():
         # risk group attribute
         if node_data["community"] == 0:  # if in low risk community
@@ -56,7 +54,6 @@ def attr_assign(g: nx.Graph,
             risk_group_dict[node] = np.random.choice(a=risk_level_choices, size=1, p=[prop_hr_hr, 1-prop_hr_hr])[0]
         # outcome and infectivity attributes
         if risk_group_dict[node] == "low_risk":  # if low risk individual
-            # todo: factor out common functionality to helper function
             outcome_dict[node] = \
                 np.random.choice(a=[days_lr_death, days_lr_recovery], size=1, p=[death_prob_lr, 1 - death_prob_lr])[0]
             infectivity_dict[node] = \
@@ -79,4 +76,11 @@ def attr_assign(g: nx.Graph,
 
 
 def get_infect_prob(reproduction_number: int, days: int, node_degree: int):
+    """
+    Calculates the probability of infection via any of the links of a node.
+    :param reproduction_number: the average number of individuals infected by an infected individual
+    :param days: number of days the node will be infected
+    :param node_degree: number of links of the node
+    :return: infectivity: probability of the node, if infected, to affect a neighboring node in a single day
+    """
     return reproduction_number / (days * node_degree)
