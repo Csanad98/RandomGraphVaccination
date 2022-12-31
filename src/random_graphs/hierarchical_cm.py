@@ -65,14 +65,12 @@ def hierarchical_configuration_model_algo1(deg_seq_in: np.array,
         if second_big >= len(sum(half_edges[:first_community], [])):
             second_community += 1
 
-        #add the edge
+        # add the edge
         full_graph.add_edge(first_id, second_id)
 
         # remove matched half edges from h.e. list
         del half_edges[first_community][first]
         del half_edges[second_community][second]
-
-
 
     return full_graph
 

@@ -1,9 +1,7 @@
+from typing import Tuple
+
 import networkx as nx
 import numpy as np
-
-
-def rbin(p: float, out_true, out_false):
-    return out_true if np.random.binomial(1, p) == 1 else out_false
 
 
 def attr_assign(g: nx.Graph,
@@ -17,7 +15,8 @@ def attr_assign(g: nx.Graph,
                 days_hr_death: int = 18,
                 days_hr_recovery: int = 22,
                 days_lr_death: int = 18,
-                days_lr_recovery: int = 17):
+                days_lr_recovery: int = 17,
+                risk_level_choices: Tuple[str] = ("high_risk", "low_risk")):
     """
     g: Random Graph
     communities: list containing the indexes refering the to the community of the nodes
@@ -52,24 +51,32 @@ def attr_assign(g: nx.Graph,
     for node, node_data in g.nodes.items():
         # risk group attribute
         if node_data["community"] == 0:  # if in low risk community
-            risk_group_dict[node] = rbin(prop_hr_lr, "high_risk", "low_risk")
+            risk_group_dict[node] = np.random.choice(a=risk_level_choices, size=1, p=[prop_hr_lr, 1-prop_hr_lr])[0]
         else:  # if in high risk community
-            risk_group_dict[node] = rbin(prop_hr_hr, "high_risk", "low_risk")
+            risk_group_dict[node] = np.random.choice(a=risk_level_choices, size=1, p=[prop_hr_hr, 1-prop_hr_hr])[0]
         # outcome and infectivity attributes
         if risk_group_dict[node] == "low_risk":  # if low risk individual
-            outcome_dict[node], infectivity_dict[node] = rbin(death_prob_lr,
-                                                              (days_lr_death, reproduction_number / (
-                                                                      days_lr_death * g.degree[node])),
-                                                              (days_lr_recovery,
-                                                               reproduction_number / (days_lr_recovery * g.degree[node])))
+            # todo: factor out common functionality to helper function
+            outcome_dict[node] = \
+                np.random.choice(a=[days_lr_death, days_lr_recovery], size=1, p=[death_prob_lr, 1 - death_prob_lr])[0]
+            infectivity_dict[node] = \
+                np.random.choice(a=[get_infect_prob(reproduction_number, days_lr_death, g.degree[node]),
+                                    get_infect_prob(reproduction_number, days_lr_recovery, g.degree[node])],
+                                 size=1, p=[death_prob_lr, 1 - death_prob_lr])[0]
         else:  # if high risk individual
-            outcome_dict[node], infectivity_dict[node] = rbin(death_prob_hr,
-                                                              (days_hr_death, reproduction_number / (
-                                                                      days_hr_death * g.degree[node])),
-                                                              (days_hr_recovery,
-                                                               reproduction_number / (days_hr_recovery * g.degree[node])))
+            outcome_dict[node] = \
+                np.random.choice(a=[days_hr_death, days_hr_recovery], size=1, p=[death_prob_hr, 1 - death_prob_hr])[0]
+            infectivity_dict[node] = \
+                np.random.choice(a=[get_infect_prob(reproduction_number, days_hr_death, g.degree[node]),
+                                    get_infect_prob(reproduction_number, days_hr_recovery, g.degree[node])],
+                                 size=1, p=[death_prob_hr, 1 - death_prob_hr])[0]
+
     nx.set_node_attributes(g, risk_group_dict, "risk_group")
     nx.set_node_attributes(g, outcome_dict, "outcome")
     nx.set_node_attributes(g, infectivity_dict, "infectivity")
 
     return g
+
+
+def get_infect_prob(reproduction_number: int, days: int, node_degree: int):
+    return reproduction_number / (days * node_degree)
