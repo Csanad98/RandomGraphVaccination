@@ -46,7 +46,7 @@ def single_graph_generator(seed: int,
     t0 = time.time()
     # generate sequence of community sizes
     community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, seed=seed)
-    print("community size generation: {:.2f}".format(time.time() - t0))
+    print("community size generation: {:.2f}s".format(time.time() - t0))
     # generate sequences of degree and community distributions
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
@@ -91,9 +91,11 @@ def time_step_simulation(g: nx.Graph, seed: int):
     changes according to the outcome.
     """
     np.random.seed(seed)
-    deaths = {"high_risk": 0, "low_risk": 0}
-    recoveries = {"high_risk": 0, "low_risk": 0}
-    infections = {"high_risk": 0, "low_risk": 0}
+    # 4: deaths. recoveries, infections, vaccinations
+    stats = {"high_risk": np.zeros(shape=(4,)), "low_risk": np.zeros(shape=(4,))}
+    # deaths = {"high_risk": 0, "low_risk": 0}
+    # recoveries = {"high_risk": 0, "low_risk": 0}
+    # infections = {"high_risk": 0, "low_risk": 0}
     # iterate through nodes that are infected (and still alive)
     for node, node_data in filter(lambda xy: xy[1]['health'] > 0, g.nodes.items()):
         # Check all healthy neighbors of i
@@ -102,7 +104,7 @@ def time_step_simulation(g: nx.Graph, seed: int):
             # infect the neighbor with probability of node infectivity
             if np.random.binomial(1, n_node_data["infectivity"]) == 1:
                 n_node_data["health"] = 1
-                infections[n_node_data["risk_group"]] += 1
+                stats[n_node_data["risk_group"]][2] += 1
         # Check if node is not at the end of illness
         if node_data["health"] < node_data["outcome"]:
             # If not add one day to the health timeline
@@ -111,28 +113,26 @@ def time_step_simulation(g: nx.Graph, seed: int):
         elif node_data["risk_group"] == "low_risk":
             if node_data["health"] == consts.DAYS_LR_DEATH:
                 node_data["health"] = -2
-                deaths[node_data["risk_group"]] += 1
+                stats[node_data["risk_group"]][0] += 1
             elif node_data["health"] == consts.DAYS_LR_RECOVERY:
                 node_data["health"] = -1
-                recoveries[node_data["risk_group"]] += 1
+                stats[node_data["risk_group"]][1] += 1
             else:
                 raise Exception("Inconsistency in LR days consts")
 
         elif node_data["risk_group"] == "high_risk":
             if node_data["health"] == consts.DAYS_HR_DEATH:
                 node_data["health"] = -2
-                deaths[node_data["risk_group"]] += 1
+                stats[node_data["risk_group"]][0] += 1
             elif node_data["health"] == consts.DAYS_HR_RECOVERY:
                 node_data["health"] = -1
-                recoveries[node_data["risk_group"]] += 1
+                stats[node_data["risk_group"]][1] += 1
             else:
                 raise Exception("Inconsistency in HR days consts")
         else:
             raise NotImplementedError("Unsupported risk level")
 
-    return g, (deaths["high_risk"], deaths["low_risk"]), \
-           (recoveries["high_risk"], recoveries["low_risk"]), \
-           (infections["high_risk"], infections["low_risk"])
+    return g, stats
 
 
 def single_graph_simulation(seed: int,
@@ -185,77 +185,55 @@ def single_graph_simulation(seed: int,
                                prop_int_inf_hr=prop_int_hr_inf,
                                prop_hr_hr=prop_hr_hr,
                                prop_hr_lr=prop_hr_lr)
-    print("graph generation & preperation")
-    print(time.time() - t0)
+    print("graph generation & preperation: {:.2f}".format(time.time() - t0))
 
     # time simulation
-    deaths_hr = []
-    deaths_lr = []
-    recoveries_hr = []
-    recoveries_lr = []
-    infections_hr = []
-    infections_lr = []
-    vaccinations_hr = []
-    vaccinations_lr = []
-    # start of simulation
-    if vaccination_strategy == 0:  # simulation for no vaccination stategy
-        for i in range(0, n_days):
-            # run one step of the simulation
-            g, d, r, inf = time_step_simulation(g, seed)
-            # keep track of deaths, recoveries and new infections in that day.
-            deaths_hr += [d[0]]
-            deaths_lr += [d[1]]
-            recoveries_hr += [r[0]]
-            recoveries_lr += [r[1]]
-            infections_hr += [inf[0]]
-            infections_lr += [inf[1]]
-            seed += 1
-        vaccinations_hr = n_days * [0]
-        vaccinations_lr = n_days * [0]
-    elif vaccination_strategy == 1:  # random vaccination strategy
-        for i in range(0, n_days):
-            # run one step of the simulation
-            g, d, r, inf = time_step_simulation(g, seed)
-            # keep track of deaths, recoveries and new infections in that day.
-            deaths_hr += [d[0]]
-            deaths_lr += [d[1]]
-            recoveries_hr += [r[0]]
-            recoveries_lr += [r[1]]
-            infections_hr += [inf[0]]
-            infections_lr += [inf[1]]
-            # run daily vaccinations
-            if vac_stop * g.number_of_nodes() > sum(recoveries_lr + recoveries_hr + vaccinations_hr + vaccinations_lr):
-                g, vac = random_vaccination(g=g, seed=seed, vacc_percentage=0.004)
-                vaccinations_hr += [vac[0]]
-                vaccinations_lr += [vac[1]]
-            else:
-                vaccinations_hr += [0]
-                vaccinations_lr += [0]
-            seed += 1
-    print("simulation of all days")
-    print(time.time() - t0)
+    # the 8 spots are for: deaths_hr, recoveries_hr, infections_hr, vaccinations_hr,
+    # deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
+    ts_data = np.zeros((n_days, 8))
 
-    return g, deaths_hr, deaths_lr, recoveries_hr, recoveries_lr, infections_hr, infections_lr, vaccinations_hr, \
-           vaccinations_lr
+    # start of simulation
+    if vaccination_strategy == 0:  # simulation for no vaccination strategy
+        for i in range(0, n_days):
+            # run one step of the simulation
+            g, stats_dict = time_step_simulation(g, seed)
+            # keep track of deaths, recoveries and new infections in that day.
+            ts_data[i] = np.concatenate((stats_dict["high_risk"], stats_dict["low_risk"]))
+            seed += 1
+    # elif vaccination_strategy == 1:  # random vaccination strategy
+    #     for i in range(0, n_days):
+    #         # run one step of the simulation
+    #         g, stats = time_step_simulation(g, seed)
+    #         # keep track of deaths, recoveries and new infections in that day.
+    #         # todo
+    #         # run daily vaccinations
+    #         if vac_stop * g.number_of_nodes() > sum(recoveries_lr + recoveries_hr + vaccinations_hr + vaccinations_lr):
+    #             g, vac = random_vaccination(g=g, seed=seed, vacc_percentage=0.004)
+    #             vaccinations_hr += [vac[0]]
+    #             vaccinations_lr += [vac[1]]
+    #         else:
+    #             vaccinations_hr += [0]
+    #             vaccinations_lr += [0]
+    #         seed += 1
+    print("simulation of all days: {:.2f}".format(time.time() - t0))
+
+    return g, ts_data
 
 
 if "__main__" == __name__:
     seed = 1
-    n = 1000
+    n = 10000
     prop_int_hr_inf = 0.2
     n_days = 365
-    g, deaths_hr, deaths_lr, recoveries_hr, recoveries_lr, infections_hr, infections_lr, vaccinations_hr, \
-    vaccinations_lr = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
-                                              vaccination_strategy=1, vac_stop=1)
+    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
+                                         vaccination_strategy=0, vac_stop=1)
 
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
-    plt.plot(range(n_days), deaths_hr)
-    # plt.plot(range(n_days), deaths_lr)
-    plt.plot(range(n_days), recoveries_hr)
-    # plt.plot(range(n_days), recoveries_lr)
-    plt.plot(range(n_days), infections_hr)
-    # plt.plot(range(n_days), infections_lr)
-    plt.plot(range(n_days), vaccinations_hr)
-    # plt.plot(range(n_days), vaccinations_lr)
+    plt.plot(range(n_days), ts_data[:, 0], label="death hr")
+    plt.plot(range(n_days), ts_data[:, 1], label="recoveries hr")
+    plt.plot(range(n_days), ts_data[:, 2], label="infections hr")
+    plt.plot(range(n_days), ts_data[:, 3], label="vaccinations hr")
+    plt.legend()
     plt.show()
+

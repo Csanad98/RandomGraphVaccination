@@ -25,8 +25,6 @@ def attr_assign(g: nx.Graph,
 
     Assigns the following attributes to each of the nodes of the random graph:
     community: the community which the node belongs to
-    deg_out: the outward degree of the node
-    deg_in: the inward degree of the node
     health: the health state of the node, initially 0 (healthy) for every node
     risk_group: the risk group which the node belongs to. Chosen randomly but based on communities
     outcome: the outcome of the disease -> death, recovery. Denoted as number of days of infection (which are in 1-1 relation to the outcome)
