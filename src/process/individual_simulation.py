@@ -6,6 +6,7 @@ import random
 from matplotlib import pyplot as plt
 
 import consts
+from plots.plot_simulation import plot_ts_data_for_each_group
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
 
 from utils import create_community_random_color_map, community_map_from_community_sizes, \
@@ -93,9 +94,6 @@ def time_step_simulation(g: nx.Graph, seed: int):
     np.random.seed(seed)
     # 4: deaths. recoveries, infections, vaccinations
     stats = {"high_risk": np.zeros(shape=(4,)), "low_risk": np.zeros(shape=(4,))}
-    # deaths = {"high_risk": 0, "low_risk": 0}
-    # recoveries = {"high_risk": 0, "low_risk": 0}
-    # infections = {"high_risk": 0, "low_risk": 0}
     # iterate through nodes that are infected (and still alive)
     for node, node_data in filter(lambda xy: xy[1]['health'] > 0, g.nodes.items()):
         # Check all healthy neighbors of i
@@ -226,9 +224,4 @@ if "__main__" == __name__:
 
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
-    plt.plot(range(n_days), ts_data[:, 0], label="death hr")
-    plt.plot(range(n_days), ts_data[:, 1], label="recoveries hr")
-    plt.plot(range(n_days), ts_data[:, 2], label="infections hr")
-    plt.plot(range(n_days), ts_data[:, 3], label="vaccinations hr")
-    plt.legend()
-    plt.show()
+    plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)

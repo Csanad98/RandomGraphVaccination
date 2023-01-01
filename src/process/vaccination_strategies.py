@@ -15,12 +15,11 @@ def no_vaccination():
 
 def random_vaccination(g: nx.Graph, vacc_percentage: float = 0.004, seed: int = 0):
     """
-
+    Vaccinate vacc_percentage ratio of healthy nodes in the graph.
     :param g: random graph
     :param seed: seed
     :param vacc_percentage: percentage of individuals vaccinated each day
-    :return: g: graph that has gone through the vaccination process
-    (vaccinations["high_risk"], vaccinations["low_risk"]): tuple containing the amount of vaccinations in low risk and
+    :return: vaccinations, a dict containing the amount of vaccinations in low risk and
     high risk groups
     """
     random.seed(seed)
@@ -33,3 +32,9 @@ def random_vaccination(g: nx.Graph, vacc_percentage: float = 0.004, seed: int = 
         node_data["health"] = -1
         vaccinations[node_data["risk_group"]] += 1
     return vaccinations
+
+
+def risk_group_biased_random_vaccination(g: nx.Graph, vacc_percentage: float = 0.004, hr_bias: float = 0.5, seed: int = 0):
+    # todo
+    pass
+
