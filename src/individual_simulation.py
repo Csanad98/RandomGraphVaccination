@@ -16,7 +16,7 @@ from random_graphs.degree_sequence_generator import generate_power_law_degree_se
 
 from node_attributes import attr_assign
 
-from vaccination_strategies import random_vaccination
+from vaccination_strategies import no_vaccination, random_vaccination, max_vaccination_level_reached
 
 
 def single_graph_generator(seed: int,
@@ -146,7 +146,7 @@ def single_graph_simulation(seed: int,
                             prop_hr_lr: float = 0,
                             n_days: int = 365,
                             vaccination_strategy: int = 0,
-                            vac_stop: float = 1):
+                            max_vacc_threshold: float = 1):
     """
     Creates a graph and simulates n_days days of the graph.
     :param n: number of people
@@ -193,28 +193,24 @@ def single_graph_simulation(seed: int,
     ts_data = np.zeros((n_days, 8))
 
     # start of simulation
-    if vaccination_strategy == 0:  # simulation for no vaccination strategy
-        for i in range(0, n_days):
-            # run one step of the simulation
-            g, stats_dict = time_step_simulation(g, seed)
-            # keep track of deaths, recoveries and new infections in that day.
-            ts_data[i] = np.concatenate((stats_dict["high_risk"], stats_dict["low_risk"]))
-            seed += 1
-    # elif vaccination_strategy == 1:  # random vaccination strategy
-    #     for i in range(0, n_days):
-    #         # run one step of the simulation
-    #         g, stats = time_step_simulation(g, seed)
-    #         # keep track of deaths, recoveries and new infections in that day.
-    #         # todo
-    #         # run daily vaccinations
-    #         if vac_stop * g.number_of_nodes() > sum(recoveries_lr + recoveries_hr + vaccinations_hr + vaccinations_lr):
-    #             g, vac = random_vaccination(g=g, seed=seed, vacc_percentage=0.004)
-    #             vaccinations_hr += [vac[0]]
-    #             vaccinations_lr += [vac[1]]
-    #         else:
-    #             vaccinations_hr += [0]
-    #             vaccinations_lr += [0]
-    #         seed += 1
+    for i in range(0, n_days):
+        # run one step of the simulation
+        g, stats_dict = time_step_simulation(g, seed)
+        # keep track of deaths, recoveries and new infections in that day.
+        daily_data = np.concatenate((stats_dict["high_risk"], stats_dict["low_risk"]))
+        if not max_vaccination_level_reached(max_threshold=max_vacc_threshold,
+                                             num_nodes=g.number_of_nodes(),
+                                             vaccinated_count=np.sum(ts_data[:, 3]) + np.sum(ts_data[:, 7])):
+            if vaccination_strategy == 0:
+                vacc_dict = no_vaccination()
+            elif vaccination_strategy == 1:
+                vacc_dict = random_vaccination(g=g, vacc_percentage=0.004, seed=seed)
+            else:
+                raise NotImplementedError
+            daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]
+        ts_data[i] = daily_data
+        seed += 1
+
     print("simulation of all days: {:.2f}".format(time.time() - t0))
 
     return g, ts_data
@@ -222,11 +218,11 @@ def single_graph_simulation(seed: int,
 
 if "__main__" == __name__:
     seed = 1
-    n = 10000
+    n = 1000
     prop_int_hr_inf = 0.2
     n_days = 365
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
-                                         vaccination_strategy=0, vac_stop=1)
+                                         vaccination_strategy=1, max_vacc_threshold=1)
 
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
@@ -236,4 +232,3 @@ if "__main__" == __name__:
     plt.plot(range(n_days), ts_data[:, 3], label="vaccinations hr")
     plt.legend()
     plt.show()
-

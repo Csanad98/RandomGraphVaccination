@@ -1,30 +1,35 @@
 import networkx as nx
-import numpy as np
 import random
 
 
-def random_vaccination(g: nx.Graph,
-                       seed: int,
-                       vacc_percentage: float = 0.004):
+def max_vaccination_level_reached(max_threshold: float, num_nodes: int, vaccinated_count: int):
+    if vaccinated_count < num_nodes*max_threshold:
+        return False
+    else:
+        return True
+
+
+def no_vaccination():
+    return {"high_risk": 0, "low_risk": 0}
+
+
+def random_vaccination(g: nx.Graph, vacc_percentage: float = 0.004, seed: int = 0):
     """
 
     :param g: random graph
     :param seed: seed
     :param vacc_percentage: percentage of individuals vaccinated each day
-    :return: g: graph that was gone through the vaccination process
+    :return: g: graph that has gone through the vaccination process
     (vaccinations["high_risk"], vaccinations["low_risk"]): tuple containing the amount of vaccinations in low risk and
     high risk groups
     """
-    np.random.seed(seed)
+    random.seed(seed)
     # create list with healthy nodes
-    temp_list = [(x, y) for x, y in g.nodes(data=True) if y['health'] == 0]
+    healthy_nodes = [(node, node_data) for node, node_data in g.nodes.items() if node_data['health'] == 0]
+    to_be_vaccinated = random.sample(healthy_nodes, min(int(vacc_percentage * g.number_of_nodes()), len(healthy_nodes)))
     vaccinations = {"high_risk": 0, "low_risk": 0}
-    to_be_vaccinated = random.sample(temp_list, min(int(vacc_percentage * g.number_of_nodes()), len(temp_list)))
-    # create dictionary for attribute assignment
-    new_vacc_dict = {x: -1 for x, y in to_be_vaccinated}
-    # check amount of vaccinations per risk group
-    for x1, y1 in to_be_vaccinated:  # for all healthy nodes
-        vaccinations[y1["risk_group"]] += 1
-    nx.set_node_attributes(g, new_vacc_dict, "health")
-
-    return g, (vaccinations["high_risk"], vaccinations["low_risk"])
+    # vaccinate chosen nodes
+    for node, node_data in to_be_vaccinated:
+        node_data["health"] = -1
+        vaccinations[node_data["risk_group"]] += 1
+    return vaccinations
