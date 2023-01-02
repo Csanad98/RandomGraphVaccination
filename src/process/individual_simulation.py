@@ -17,7 +17,8 @@ from random_graphs.degree_sequence_generator import generate_power_law_degree_se
 
 from node_attributes import attr_assign
 
-from vaccination_strategies import no_vaccination, random_vaccination, max_vaccination_level_reached
+from vaccination_strategies import no_vaccination, random_vaccination, max_vaccination_level_reached, \
+    risk_group_biased_random_vaccination
 
 
 def single_graph_generator(seed: int,
@@ -203,6 +204,8 @@ def single_graph_simulation(seed: int,
                 vacc_dict = no_vaccination()
             elif vaccination_strategy == 1:
                 vacc_dict = random_vaccination(g=g, vacc_percentage=0.004, seed=seed)
+            elif vaccination_strategy == 2:
+                vacc_dict = risk_group_biased_random_vaccination(g=g, vacc_percentage=0.004, hr_bias=0.9, seed=seed)
             else:
                 raise NotImplementedError
             daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]
@@ -220,7 +223,7 @@ if "__main__" == __name__:
     prop_int_hr_inf = 0.2
     n_days = 365
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
-                                         vaccination_strategy=1, max_vacc_threshold=1)
+                                         vaccination_strategy=2, max_vacc_threshold=1)
 
     print(list(nx.get_node_attributes(g, "health").values()).count(-2))
     print(list(nx.get_node_attributes(g, "health").values()).count(-1))
