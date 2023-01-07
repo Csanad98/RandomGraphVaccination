@@ -3,6 +3,8 @@ from typing import List, Tuple, Dict
 import networkx as nx
 import random
 
+from utils import get_conditional_nodes
+
 
 def max_vaccination_level_reached(max_threshold: float, num_nodes: int, vaccinated_count: int):
     if vaccinated_count < num_nodes * max_threshold:
@@ -24,7 +26,7 @@ def random_vaccination(g: nx.Graph, vacc_percentage: float = 0.004, seed: int = 
     :return: vaccinations, a dict containing the amount of vaccinations in low risk and high risk groups
     """
     random.seed(seed)
-    healthy_nodes = _get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])
+    healthy_nodes = get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])
     to_be_vaccinated = random.sample(healthy_nodes, min(int(vacc_percentage * g.number_of_nodes()), len(healthy_nodes)))
     vaccinations = _apply_vaccination_on_selected_nodes(to_be_vaccinated=to_be_vaccinated)
     return vaccinations
@@ -42,12 +44,12 @@ def risk_group_biased_random_vaccination(g: nx.Graph, vacc_percentage: float = 0
     :return: vaccinations, a dict containing the amount of vaccinations in low risk and high risk groups
     """
     random.seed(seed)
-    hr_h_nodes = _get_conditional_nodes(g=g,
-                                        attributes=["health", "risk_group", "vaccine_approval"],
-                                        values=[0, "high_risk", True])
-    lr_h_nodes = _get_conditional_nodes(g=g,
-                                        attributes=["health", "risk_group", "vaccine_approval"],
-                                        values=[0, "low_risk", True])
+    hr_h_nodes = get_conditional_nodes(g=g,
+                                       attributes=["health", "risk_group", "vaccine_approval"],
+                                       values=[0, "high_risk", True])
+    lr_h_nodes = get_conditional_nodes(g=g,
+                                       attributes=["health", "risk_group", "vaccine_approval"],
+                                       values=[0, "low_risk", True])
     to_be_vaccinated_hr = random.sample(hr_h_nodes, min(int(hr_bias * vacc_percentage * g.number_of_nodes()),
                                                         len(hr_h_nodes)))
     remaining_doses = int(vacc_percentage * g.number_of_nodes()) - len(to_be_vaccinated_hr)
@@ -66,7 +68,7 @@ def high_degree_first_vaccination(g: nx.Graph, vacc_percentage: float = 0.004):
     :return: vaccine stats
     """
     h_nodes_dict = {node_id: node_data for node_id, node_data in
-                    _get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])}
+                    get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])}
     deg_sorted_h_nodes = sorted(g.degree(list(h_nodes_dict.keys())), key=lambda x: x[1], reverse=True)
     available_doses = min(int(g.number_of_nodes() * vacc_percentage), len(deg_sorted_h_nodes))
     to_be_vaccinated = [(node_id, h_nodes_dict[node_id]) for node_id, _ in deg_sorted_h_nodes[:available_doses]]
@@ -80,25 +82,6 @@ def community_ring_vaccination():
 
 def high_out_degree_communities_first():
     pass
-
-
-def _get_conditional_nodes(g: nx.Graph, attributes: List[str], values: List) -> List[Tuple[int, dict]]:
-    """
-    Creates list with nodes and their attributes that satisfy a condition.
-    :param attributes: node_data attributes
-    :param values: the desired values the attributes must satisfy for a node to be selected
-    :param g: graph
-    :return: list of nodes satisfying conditions
-    """
-    result = []
-    for node, node_data in g.nodes.items():
-        for attr, val in zip(attributes, values):
-            if node_data[attr] != val:
-                break
-        # only adds node to result if all conditions were satisfied
-        else:
-            result += [(node, node_data)]
-    return result
 
 
 def _apply_vaccination_on_selected_nodes(to_be_vaccinated: List[Tuple[int, dict]]) -> Dict[str, int]:

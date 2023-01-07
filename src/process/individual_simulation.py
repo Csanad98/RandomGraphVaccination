@@ -27,7 +27,7 @@ def single_graph_generator(seed: int,
                            lam: float = 15,
                            prop_lr_com_size: float = 0.45,
                            prop_int_inf: float = 0.05,
-                           prop_int_inf_hr: float = 0.5,
+                           prop_int_inf_hr: float = 0.025,
                            prop_hr_hr: float = 0.7,
                            prop_hr_lr: float = 0,
                            vacc_app_prob: float = 0.7):
@@ -79,9 +79,7 @@ def single_graph_generator(seed: int,
                     seed=seed)
     print("attribute assignment: {:.2f}s".format(time.time() - t0))
     # set the initially infected individuals
-    infected = init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
-                             prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
-    nx.set_node_attributes(g, dict(zip(infected, len(infected) * [1])), 'health')
+    init_infected(g=g, prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr, seed=seed)
     print("initial infections added: {:.2f}s".format(time.time() - t0))
     return g
 
@@ -143,7 +141,7 @@ def single_graph_simulation(seed: int,
                             lam: float = 15,
                             prop_lr_com_size: float = 0.45,
                             prop_int_inf: float = 0.05,
-                            prop_int_hr_inf: float = 0.5,
+                            prop_int_hr_inf: float = 0.025,
                             prop_hr_hr: float = 0.7,
                             prop_hr_lr: float = 0,
                             n_days: int = 365,
@@ -226,10 +224,11 @@ def single_graph_simulation(seed: int,
 if "__main__" == __name__:
     seed = 1
     n = 1000
-    prop_int_hr_inf = 0.2
+    prop_int_hr_inf = 0.005
+    prop_int_inf = 0.01
     n_days = 365
-    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
-                                         vaccination_strategy=3, max_vacc_threshold=0.8)
+    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
+                                         n_days=n_days, vaccination_strategy=3, max_vacc_threshold=0.8)
 
     print("Number of deaths: {}".format(list(nx.get_node_attributes(g, "health").values()).count(-2)))
     print("Number of immune people: {}".format(list(nx.get_node_attributes(g, "health").values()).count(-1)))
