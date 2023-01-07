@@ -27,7 +27,7 @@ def single_graph_generator(seed: int,
                            lam: float = 15,
                            prop_lr_com_size: float = 0.45,
                            prop_int_inf: float = 0.05,
-                           prop_int_inf_hr: float = 0.025,
+                           prop_int_inf_hr: float = 0.5,
                            prop_hr_hr: float = 0.7,
                            prop_hr_lr: float = 0,
                            vacc_app_prob: float = 0.7):
@@ -141,7 +141,7 @@ def single_graph_simulation(seed: int,
                             lam: float = 15,
                             prop_lr_com_size: float = 0.45,
                             prop_int_inf: float = 0.05,
-                            prop_int_hr_inf: float = 0.025,
+                            prop_int_hr_inf: float = 0.5,
                             prop_hr_hr: float = 0.7,
                             prop_hr_lr: float = 0,
                             n_days: int = 365,
@@ -224,8 +224,8 @@ def single_graph_simulation(seed: int,
 if "__main__" == __name__:
     seed = 1
     n = 1000
-    prop_int_hr_inf = 0.005
-    prop_int_inf = 0.01
+    prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
+    prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
                                          n_days=n_days, vaccination_strategy=3, max_vacc_threshold=0.8)

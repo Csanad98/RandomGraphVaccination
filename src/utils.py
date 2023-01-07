@@ -68,16 +68,17 @@ def init_infected(g: nx.Graph, prop_int_inf: float, prop_int_inf_hr: float = 0.5
     of the simulation
     """
     random.seed(seed)
-    assert prop_int_inf >= prop_int_inf_hr, "total proportion of infected nodes must be at least as high as " \
-                                            "proportion of init infected high risk nodes"
+    assert prop_int_inf > 0 and prop_int_inf_hr > 0
+    assert prop_int_inf < 1 and prop_int_inf_hr <= 1
 
-    prop_int_inf_lr = prop_int_inf - prop_int_inf_hr
+    total_hr_init_prop = prop_int_inf * prop_int_inf_hr
+    total_lr_init_prop = prop_int_inf - total_hr_init_prop
 
     hr_nodes = get_conditional_nodes(g=g, attributes=["risk_group"], values=["high_risk"])
     lr_nodes = get_conditional_nodes(g=g, attributes=["risk_group"], values=["low_risk"])
 
-    init_lr_nodes = random.sample(lr_nodes, int(g.number_of_nodes()*prop_int_inf_lr))
-    init_hr_nodes = random.sample(hr_nodes, int(g.number_of_nodes() * prop_int_inf_hr))
+    init_lr_nodes = random.sample(lr_nodes, int(g.number_of_nodes() * total_lr_init_prop))
+    init_hr_nodes = random.sample(hr_nodes, int(g.number_of_nodes() * total_hr_init_prop))
     init_infected_nodes = init_lr_nodes + init_hr_nodes
     for node, node_data in init_infected_nodes:
         node_data["health"] = 1
