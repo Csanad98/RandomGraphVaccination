@@ -6,6 +6,7 @@ import random
 from matplotlib import pyplot as plt
 
 import consts
+from analysis.stats import count_nodes_in_states, collect_health_attr_stats
 from plots.plot_simulation import plot_ts_data_for_each_group
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
 
@@ -96,7 +97,7 @@ def time_step_simulation(g: nx.Graph, seed: int):
     np.random.seed(seed)
     # 4: deaths. recoveries, infections, vaccinations
     stats = {"high_risk": np.zeros(shape=(4,)), "low_risk": np.zeros(shape=(4,))}
-    # iterate through nodes that are infected (and still alive)
+    # iterate through nodes that are infected (and not dead or immune)
     for node, node_data in filter(lambda xy: xy[1]['health'] > 0, g.nodes.items()):
         # Check all healthy neighbors of i
         for n_node, n_node_data in \
@@ -227,9 +228,8 @@ if "__main__" == __name__:
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
+    vacc_strategy = 3
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
-                                         n_days=n_days, vaccination_strategy=3, max_vacc_threshold=0.8)
-
-    print("Number of deaths: {}".format(list(nx.get_node_attributes(g, "health").values()).count(-2)))
-    print("Number of immune people: {}".format(list(nx.get_node_attributes(g, "health").values()).count(-1)))
+                                         n_days=n_days, vaccination_strategy=vacc_strategy, max_vacc_threshold=0.8)
+    collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)

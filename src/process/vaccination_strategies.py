@@ -94,7 +94,7 @@ def _apply_vaccination_on_selected_nodes(to_be_vaccinated: List[Tuple[int, dict]
     # vaccinate chosen nodes
     for node, node_data in to_be_vaccinated:
         if node_data["vaccine_approval"]:
-            node_data["health"] = -1
+            node_data["health"] = -3
             vaccinations[node_data["risk_group"]] += 1
         else:
             raise Exception("Should not try vaccinating people who are not willing.")
