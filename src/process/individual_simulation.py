@@ -6,7 +6,8 @@ import random
 from matplotlib import pyplot as plt
 
 import consts
-from analysis.stats import count_nodes_in_states, collect_health_attr_stats
+from analysis.stats import count_nodes_in_states, collect_health_attr_stats, get_end_time_of_pandemic, \
+    get_max_infected_ratio
 from plots.plot_simulation import plot_ts_data_for_each_group
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1, hierarchical_configuration_model_algo3
 
@@ -18,7 +19,7 @@ from random_graphs.degree_sequence_generator import generate_power_law_degree_se
 
 from node_attributes import attr_assign
 
-from vaccination_strategies import max_vaccination_level_reached, VaccinationStrategy
+from vaccination_strategies import max_vaccination_level_reached, VaccinationStrategy, high_degree_first_vaccination
 
 
 def single_graph_generator(seed: int,
@@ -237,10 +238,13 @@ if "__main__" == __name__:
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    vacc_strategy = 5
+    vacc_strategy = 2
     prop_lr_com_size = 0.25
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
                                          n_days=n_days, vaccination_strategy=vacc_strategy, max_vacc_threshold=0.8,
                                          prop_lr_com_size=prop_lr_com_size)
     collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)
+    print("Pandemic end day: {}".format(get_end_time_of_pandemic(ts_data)))
+    peaks = get_max_infected_ratio(time_series_data=ts_data, num_nodes=n)
+    print("Pandemic peak ratios; everyone: {}, hr: {}, lr: {}".format(peaks[0], peaks[1], peaks[2]))

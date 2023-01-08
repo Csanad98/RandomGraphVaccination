@@ -36,3 +36,48 @@ def health_stats_printer(counts: Tuple[int, int, int], type_str: str):
     print("Number of {}: {}".format(type_str, counts[0]))
     print("Number of hr {}: {}".format(type_str, counts[1]))
     print("Number of lr {}: {}".format(type_str, counts[2]))
+
+
+def get_end_time_of_pandemic(time_series_data: np.ndarray) -> int:
+    """
+
+    :param time_series_data: (n_days, 8), where the 8 spots are for: deaths_hr, recoveries_hr, infections_hr,
+    vaccinations_hr, deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
+    :return: last day of the pandemic (max of: date of last recovery or death)
+    """
+    last_hr_death = np.nonzero(time_series_data[:, 0])[0][-1]
+    last_hr_recovery = np.nonzero(time_series_data[:, 1])[0][-1]
+    last_lr_death = np.nonzero(time_series_data[:, 4])[0][-1]
+    last_lr_recovery = np.nonzero(time_series_data[:, 5])[0][-1]
+    return max((last_hr_death, last_hr_recovery, last_lr_death, last_lr_recovery))
+
+
+def get_max_infected_ratio(time_series_data: np.ndarray, num_nodes: int) -> Tuple[float, float, float]:
+    """
+
+    :param num_nodes: total number of nodes in the graph
+    :param time_series_data: (n_days, 8), where the 8 spots are for: deaths_hr, recoveries_hr, infections_hr,
+    vaccinations_hr, deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
+    :return: max ratio of infected people: total, high risk, low risk
+    """
+    lr = 0
+    hr = 0
+    max_total = 0
+    max_lr = 0
+    max_hr = 0
+    for d in range(time_series_data.shape[0]):
+        hr += time_series_data[d, 2]
+        hr -= time_series_data[d, 0]
+        hr -= time_series_data[d, 1]
+        lr += time_series_data[d, 6]
+        lr -= time_series_data[d, 4]
+        lr -= time_series_data[d, 5]
+        total = lr + hr
+        if lr > max_lr:
+            max_lr = lr
+        if hr > max_hr:
+            max_hr = hr
+        if total > max_total:
+            max_total = total
+    return max_total / num_nodes, max_hr / num_nodes, max_lr / num_nodes
+

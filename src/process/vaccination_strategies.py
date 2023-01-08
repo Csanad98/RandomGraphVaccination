@@ -43,7 +43,7 @@ class VaccinationStrategy:
         used - this emulates how the vaccine staff needs to travel and setup at each community they vist.
         :return: vaccine stats
         """
-        # always update to get latest data
+        # always update to get the latest data
         self.current_community_nodes = self._get_connector_nodes(g=g)
 
         # once no more people to vaccinate in the current community, switch to the next one
