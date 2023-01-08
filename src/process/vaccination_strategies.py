@@ -13,7 +13,7 @@ def max_vaccination_level_reached(max_threshold: float, num_nodes: int, vaccinat
 
 
 class VaccinationStrategy:
-    def __init__(self, strategy_id: int):
+    def __init__(self, strategy_id: int, max_comm_id: int):
         self.strategy_id = strategy_id
         if strategy_id == 0:
             self.apply_daily_vaccination = no_vaccination
@@ -25,12 +25,12 @@ class VaccinationStrategy:
             self.apply_daily_vaccination = high_degree_first_vaccination
         elif strategy_id == 4:
             self.apply_daily_vaccination = self.community_ring_vaccination
-            self.current_community = 1
+            self.current_community = max_comm_id
             self.current_community_nodes = None
         else:
             raise NotImplementedError
 
-    def community_ring_vaccination(self, g: nx.Graph, last_community_id: int, vacc_percentage: float = 0.004):
+    def community_ring_vaccination(self, g: nx.Graph, vacc_percentage: float = 0.004):
         """
         Vaccination community by community. Within a community, only vaccinate nodes that connect the community to the
         outside of the community. Vaccinate high degree connector nodes first. It's not realistic to vaccinate everyone
@@ -40,26 +40,29 @@ class VaccinationStrategy:
         :return: vaccine stats
         """
         # always update to get latest data
-        self.current_community_nodes = get_conditional_nodes(g=g,
-                                                             attributes=["community", "health", "vaccine_approval"],
-                                                             values=[self.current_community, 0, True])
-        # once no more people to vaccinate in the current community, switch to the next one
-        while len(self.current_community_nodes) == 0 and self.current_community < last_community_id:
-            self.current_community += 1
-            self.current_community_nodes = get_conditional_nodes(g=g,
-                                                                 attributes=["community", "health", "vaccine_approval"],
-                                                                 values=[self.current_community, 0, True])
+        self.current_community_nodes = self._get_connector_nodes(g=g)
 
+        # once no more people to vaccinate in the current community, switch to the next one
+        while len(self.current_community_nodes) == 0 and self.current_community > 0:
+            self.current_community -= 1
+            self.current_community_nodes = self._get_connector_nodes(g=g)
+
+        # order by degree and vaccinate
+        return vaccinate_selected_high_degree_nodes_first(g=g, nodes_dict=self.current_community_nodes,
+                                                          vacc_percentage=vacc_percentage)
+
+    def _get_connector_nodes(self, g: nx.Graph):
+        community_nodes = get_conditional_nodes(g=g,
+                                                attributes=["community", "health", "vaccine_approval"],
+                                                values=[self.current_community, 0, True])
         # filter to get nodes that connect to outside
         connector_nodes = {}
-        for node, node_data in self.current_community_nodes:
+        for node, node_data in community_nodes:
             for neighbor in g.neighbors(node):
                 if g.nodes[neighbor]["community"] != self.current_community:
                     connector_nodes[node] = node_data
                     break
-        # order by degree and vaccinate
-        return vaccinate_selected_high_degree_nodes_first(g=g, nodes_dict=connector_nodes,
-                                                          vacc_percentage=vacc_percentage)
+        return connector_nodes
 
 
 def no_vaccination():

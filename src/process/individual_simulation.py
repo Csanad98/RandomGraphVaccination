@@ -195,8 +195,9 @@ def single_graph_simulation(seed: int,
     # deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
     ts_data = np.zeros((n_days, 8))
 
-    vacc_strat = VaccinationStrategy(strategy_id=vaccination_strategy)
     max_comm_id = get_max_community_id(g=g)
+    vacc_strat = VaccinationStrategy(strategy_id=vaccination_strategy, max_comm_id=max_comm_id)
+
 
 
     # start of simulation
@@ -218,8 +219,7 @@ def single_graph_simulation(seed: int,
             elif vaccination_strategy == 3:
                 vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
             elif vaccination_strategy == 4:
-                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, last_community_id=max_comm_id,
-                                                               vacc_percentage=daily_vacc_prop)
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
             else:
                 raise NotImplementedError
             daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]
@@ -237,7 +237,7 @@ if "__main__" == __name__:
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    vacc_strategy = 3
+    vacc_strategy = 4
     prop_lr_com_size = 0.25
     g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
                                          n_days=n_days, vaccination_strategy=vacc_strategy, max_vacc_threshold=0.8,
