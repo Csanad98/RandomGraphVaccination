@@ -28,9 +28,18 @@ def is_community_structure_possible(deg_seq_out, communities):
 def cm_for_communities(deg_seq_in: np.array,
                        communities: np.array,
                        graph: nx.Graph,
+                       community_for_general_pop=True,
                        seed=0):
+    community_ids = np.unique(communities)
+    # if general population is not a community, then don't create edges between community 0 nodes
+    if not community_for_general_pop:
+        community_ids = community_ids[1:]
+        # add community zero nodes without edges:
+        vertex_ids_for_0 = np.where(communities == 0)[0]
+        graph.add_nodes_from(vertex_ids_for_0)
+
     # Run configuration model for each community, use degree sequence meant for within communities
-    for c in np.unique(communities):
+    for c in community_ids:
         # get vertex ids for current community
         vertex_ids_for_c = np.where(communities == c)[0]  # index 0 since we have only one dimension
         # call nx.Graph to get a (non-erased) Configuration Model Multigraph
@@ -40,3 +49,20 @@ def cm_for_communities(deg_seq_in: np.array,
         community_sub_graph = nx.Graph(community_sub_graph)
         graph = nx.disjoint_union(graph, community_sub_graph)
     return graph
+
+
+def get_half_edges(deg_seq_in: np.array, deg_seq_out: np.array, communities: np.array):
+    general_pop_nodes = np.where(communities == 0)[0]  # general population nodes
+    community_nodes = np.nonzero(communities)[0]  # community nodes
+    half_edges = []
+    for g_node_id in general_pop_nodes:
+        for _ in range(deg_seq_in[g_node_id]):
+            half_edges.append(g_node_id)
+        for _ in range(deg_seq_out[g_node_id]):
+            half_edges.append(g_node_id)
+    for g_node_id in community_nodes:
+        for _ in range(deg_seq_out[g_node_id]):
+            half_edges.append(g_node_id)
+    return half_edges
+
+
