@@ -1,3 +1,4 @@
+import random
 from typing import Tuple
 
 import networkx as nx
@@ -14,6 +15,7 @@ def attr_assign(g: nx.Graph,
                 seed: int = 0,
                 death_prob_hr: float = 0.083,
                 death_prob_lr: float = 0.012,
+                vacc_app_prob: float = 0.7,
                 risk_level_choices: Tuple[str] = ("high_risk", "low_risk")):
     """
     g: Random Graph
@@ -21,6 +23,7 @@ def attr_assign(g: nx.Graph,
     prop_hr_hr: proportion of high-risk people inside high risk communities
     prop_hr_lr: proportion of high-risk people inside low risk communities
     reproduction number: the average number of individuals infected by an infected individual
+    vacc_app_prob: vaccine approval probability
     seed: seed
 
     Assigns the following attributes to each of the nodes of the random graph:
@@ -31,6 +34,7 @@ def attr_assign(g: nx.Graph,
     infectivity: probability of the node, if infected, to affect a neighboring node in a single day
     """
     np.random.seed(seed)
+    random.seed(seed)
     n = len(communities)
     # Adding Community attribute
     nx.set_node_attributes(g, dict(zip(range(n), communities)), "community")
@@ -43,6 +47,9 @@ def attr_assign(g: nx.Graph,
     outcome_dict = {}
     infectivity_dict = {}
     for node, node_data in g.nodes.items():
+        # vaccine approval: T: approves it, F: rejects it
+        node_data["vaccine_approval"] = True if random.random() <= vacc_app_prob else False
+
         # risk group attribute
         if node_data["community"] == 0:  # if in low risk community
             risk_group_dict[node] = np.random.choice(a=risk_level_choices, size=1, p=[prop_hr_lr, 1-prop_hr_lr])[0]

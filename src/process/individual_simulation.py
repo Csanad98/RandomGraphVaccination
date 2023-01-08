@@ -6,18 +6,19 @@ import random
 from matplotlib import pyplot as plt
 
 import consts
+from analysis.stats import count_nodes_in_states, collect_health_attr_stats
 from plots.plot_simulation import plot_ts_data_for_each_group
-from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1
+from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1, hierarchical_configuration_model_algo3
 
 from utils import create_community_random_color_map, community_map_from_community_sizes, \
-    community_sizes_generator, init_infected
+    community_sizes_generator, init_infected, get_max_community_id
 
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
     generate_community_degree_seq, generate_poisson_degree_seq
 
 from node_attributes import attr_assign
 
-from vaccination_strategies import no_vaccination, random_vaccination, max_vaccination_level_reached
+from vaccination_strategies import max_vaccination_level_reached, VaccinationStrategy
 
 
 def single_graph_generator(seed: int,
@@ -28,11 +29,13 @@ def single_graph_generator(seed: int,
                            prop_int_inf: float = 0.05,
                            prop_int_inf_hr: float = 0.5,
                            prop_hr_hr: float = 0.7,
-                           prop_hr_lr: float = 0):
+                           prop_hr_lr: float = 0,
+                           vacc_app_prob: float = 0.7):
     """
     Creates a hierarchical configuration model graph with randomly generated degree distributions and assigns the
     attributes of community, health risk group, infectivity and outcome. It also starts with a starting percentage of
     infected nodes
+    :param vacc_app_prob: vaccine approval probability
     :param n: number of people
     :param seed: seed
     :param tau: parameter for outward degree distribution
@@ -57,27 +60,26 @@ def single_graph_generator(seed: int,
     print("hcm parameters generation: {:.2f}s".format(time.time() - t0))
 
     # generate hierarchical configuration model
-    g = hierarchical_configuration_model_algo1(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
+    g = hierarchical_configuration_model_algo3(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
     print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
-    if n <= 1000:
-        color_map = create_community_random_color_map(communities)
-        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
-        plt.show()
-        print("graph plotting: {:.2f}s".format(time.time() - t0))
+    # if n <= 1000:
+    #     color_map = create_community_random_color_map(communities)
+    #     nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+    #     plt.show()
+    #     print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
                     communities=communities,
                     prop_hr_hr=prop_hr_hr,
                     prop_hr_lr=prop_hr_lr,
+                    vacc_app_prob=vacc_app_prob,
                     seed=seed)
     print("attribute assignment: {:.2f}s".format(time.time() - t0))
     # set the initially infected individuals
-    infected = init_infected(n=n, prop_lr_com_size=prop_lr_com_size,
-                             prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr)
-    nx.set_node_attributes(g, dict(zip(infected, len(infected) * [1])), 'health')
+    init_infected(g=g, prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr, seed=seed)
     print("initial infections added: {:.2f}s".format(time.time() - t0))
     return g
 
@@ -94,7 +96,7 @@ def time_step_simulation(g: nx.Graph, seed: int):
     np.random.seed(seed)
     # 4: deaths. recoveries, infections, vaccinations
     stats = {"high_risk": np.zeros(shape=(4,)), "low_risk": np.zeros(shape=(4,))}
-    # iterate through nodes that are infected (and still alive)
+    # iterate through nodes that are infected (and not dead or immune)
     for node, node_data in filter(lambda xy: xy[1]['health'] > 0, g.nodes.items()):
         # Check all healthy neighbors of i
         for n_node, n_node_data in \
@@ -144,9 +146,11 @@ def single_graph_simulation(seed: int,
                             prop_hr_lr: float = 0,
                             n_days: int = 365,
                             vaccination_strategy: int = 0,
+                            daily_vacc_prop: float = 0.004,
                             max_vacc_threshold: float = 1):
     """
     Creates a graph and simulates n_days days of the graph.
+    :param daily_vacc_prop: proportion of population that can be vaccinated in one day
     :param n: number of people
     :param seed: seed
     :param tau: parameter for outward degree distribution
@@ -182,13 +186,17 @@ def single_graph_simulation(seed: int,
                                prop_int_inf=prop_int_inf,
                                prop_int_inf_hr=prop_int_hr_inf,
                                prop_hr_hr=prop_hr_hr,
-                               prop_hr_lr=prop_hr_lr)
+                               prop_hr_lr=prop_hr_lr,
+                               vacc_app_prob=max_vacc_threshold)
     print("graph generation & preperation: {:.2f}".format(time.time() - t0))
 
     # time simulation
     # the 8 spots are for: deaths_hr, recoveries_hr, infections_hr, vaccinations_hr,
     # deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
     ts_data = np.zeros((n_days, 8))
+
+    max_comm_id = get_max_community_id(g=g)
+    vacc_strat = VaccinationStrategy(strategy_id=vaccination_strategy, max_comm_id=max_comm_id, g=g)
 
     # start of simulation
     for i in range(0, n_days):
@@ -200,9 +208,18 @@ def single_graph_simulation(seed: int,
                                              num_nodes=g.number_of_nodes(),
                                              vaccinated_count=np.sum(ts_data[:, 3]) + np.sum(ts_data[:, 7])):
             if vaccination_strategy == 0:
-                vacc_dict = no_vaccination()
+                vacc_dict = vacc_strat.apply_daily_vaccination()
             elif vaccination_strategy == 1:
-                vacc_dict = random_vaccination(g=g, vacc_percentage=0.004, seed=seed)
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop, seed=seed)
+            elif vaccination_strategy == 2:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop,
+                                                               hr_bias=0.9, seed=seed)
+            elif vaccination_strategy == 3:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
+            elif vaccination_strategy == 4:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
+            elif vaccination_strategy == 5:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
             else:
                 raise NotImplementedError
             daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]
@@ -217,11 +234,13 @@ def single_graph_simulation(seed: int,
 if "__main__" == __name__:
     seed = 1
     n = 1000
-    prop_int_hr_inf = 0.2
+    prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
+    prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_hr_inf=prop_int_hr_inf, n_days=n_days,
-                                         vaccination_strategy=1, max_vacc_threshold=1)
-
-    print(list(nx.get_node_attributes(g, "health").values()).count(-2))
-    print(list(nx.get_node_attributes(g, "health").values()).count(-1))
+    vacc_strategy = 5
+    prop_lr_com_size = 0.25
+    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
+                                         n_days=n_days, vaccination_strategy=vacc_strategy, max_vacc_threshold=0.8,
+                                         prop_lr_com_size=prop_lr_com_size)
+    collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)

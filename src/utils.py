@@ -1,5 +1,7 @@
-from typing import List
+import random
+from typing import List, Tuple
 
+import networkx as nx
 import numpy as np
 
 
@@ -56,24 +58,59 @@ def correct_deg_sum_to_be_even(seq: np.array):
     return seq
 
 
-def init_infected(n: int, prop_lr_com_size: float,
-                  prop_int_inf: float, prop_int_inf_hr: float = 0.5):
+def init_infected(g: nx.Graph, prop_int_inf: float, prop_int_inf_hr: float = 0.5, seed: int = 0):
     """
-    :param n: size of population
-    :param prop_lr_com_size: proportion of nodes in the low risk community
+    :param seed:
+    :param g: graph with attributes
     :param prop_int_inf: proportion of initially infected nodes
     :param prop_int_inf_hr: proportion of high risk in the initially infected nodes
-    :return: infected: a tuple including the nodes that are infected at the start
+    :return: init_infected_nodes: a list of the nodes (ids) that are infected at the start
     of the simulation
     """
-    infected = []
-    # n_infected_lr = 0
-    # n_infected_hr = 0
-    for i in range(n):
-        if i < int(prop_lr_com_size * n) and np.random.binomial(1, prop_int_inf * (1 - prop_int_inf_hr)) == 1:
-            infected += [i]
-            # n_infected_lr+=1
-        elif np.random.binomial(1, prop_int_inf * prop_int_inf_hr) == 1:
-            infected += [i]
-            # n_infected_hr+=1
-    return infected
+    random.seed(seed)
+    assert prop_int_inf > 0 and prop_int_inf_hr > 0
+    assert prop_int_inf < 1 and prop_int_inf_hr <= 1
+
+    total_hr_init_prop = prop_int_inf * prop_int_inf_hr
+    total_lr_init_prop = prop_int_inf - total_hr_init_prop
+
+    hr_nodes = get_conditional_nodes(g=g, attributes=["risk_group"], values=["high_risk"])
+    lr_nodes = get_conditional_nodes(g=g, attributes=["risk_group"], values=["low_risk"])
+
+    init_lr_nodes = random.sample(lr_nodes, int(g.number_of_nodes() * total_lr_init_prop))
+    init_hr_nodes = random.sample(hr_nodes, int(g.number_of_nodes() * total_hr_init_prop))
+    init_infected_nodes = init_lr_nodes + init_hr_nodes
+    for node, node_data in init_infected_nodes:
+        node_data["health"] = 1
+
+
+def get_conditional_nodes(g: nx.Graph, attributes: List[str], values: List) -> List[Tuple[int, dict]]:
+    """
+    Creates list with nodes and their attributes that satisfy a condition.
+    :param attributes: node_data attributes
+    :param values: the desired values the attributes must satisfy for a node to be selected
+    :param g: graph
+    :return: list of nodes satisfying conditions
+    """
+    result = []
+    for node, node_data in g.nodes.items():
+        for attr, val in zip(attributes, values):
+            if node_data[attr] != val:
+                break
+        # only adds node to result if all conditions were satisfied
+        else:
+            result += [(node, node_data)]
+    return result
+
+
+def get_nodes_by_degree_order(g: nx.Graph, node_ids: np.array):
+    deg_sorted_nodes = sorted(g.degree(node_ids), key=lambda x: x[1], reverse=True)
+    return deg_sorted_nodes
+
+
+def get_max_community_id(g: nx.Graph) -> int:
+    max_id = -1
+    for node, node_data in g.nodes.items():
+        if node_data["community"] > max_id:
+            max_id = node_data["community"]
+    return max_id

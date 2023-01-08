@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import random
 
 from random_graphs.hcm_utils import create_half_edges_between_communities, is_community_structure_possible, \
-    cm_for_communities
+    cm_for_communities, get_half_edges
 from utils import create_community_random_color_map, community_map_from_community_sizes
 
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
@@ -106,13 +106,46 @@ def hierarchical_configuration_model_algo2(deg_seq_in: np.array,
     return full_graph
 
 
+def hierarchical_configuration_model_algo3(deg_seq_in: np.array,
+                                           deg_seq_out: np.array,
+                                           communities: np.array,
+                                           seed=0):
+    """
+    No "community" for general population. Matches general population in and out degrees both with community out edges
+     and general pop edges.
+    :param deg_seq_in:
+    :param deg_seq_out:
+    :param communities:
+    :param seed:
+    :return:
+    """
+    assert len(deg_seq_in) == len(deg_seq_out)
+    full_graph = nx.Graph()
+    random.seed(seed)
+    np.random.seed(seed)
+
+    # create communities according to degree distributions within communities
+    full_graph = cm_for_communities(deg_seq_in=deg_seq_in, communities=communities, graph=full_graph,
+                                    community_for_general_pop=False, seed=0)
+
+    half_edges = get_half_edges(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
+
+    # match all inter community half edges uniformly via algo 1: permutation, then pair them
+    matchings = np.random.permutation(half_edges)
+
+    for i in range(0, len(matchings)-1, 2):
+        full_graph.add_edge(matchings[i], matchings[i+1])
+
+    return full_graph
+
+
 if "__main__" == __name__:
     seed = 1
     random.seed(seed)
     community_sizes = [random.randint(5, 15) for _ in range(20)]
     tau = 2.8
     p = 0.05
-    lam = 15
+    lam = 3
     n = sum(community_sizes)
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
