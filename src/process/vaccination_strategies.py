@@ -2,7 +2,8 @@ import networkx as nx
 import random
 
 from utils import get_conditional_nodes
-from process.vaccine_utils import vaccinate_selected_high_degree_nodes_first, _apply_vaccination_on_selected_nodes
+from process.vaccine_utils import vaccinate_selected_high_degree_nodes_first, _apply_vaccination_on_selected_nodes, \
+    get_vaccine_doses_count
 
 
 def max_vaccination_level_reached(max_threshold: float, num_nodes: int, vaccinated_count: int):
@@ -13,7 +14,7 @@ def max_vaccination_level_reached(max_threshold: float, num_nodes: int, vaccinat
 
 
 class VaccinationStrategy:
-    def __init__(self, strategy_id: int, max_comm_id: int):
+    def __init__(self, strategy_id: int, max_comm_id: int, g: nx.Graph):
         self.strategy_id = strategy_id
         if strategy_id == 0:
             self.apply_daily_vaccination = no_vaccination
@@ -27,6 +28,9 @@ class VaccinationStrategy:
             self.apply_daily_vaccination = self.community_ring_vaccination
             self.current_community = max_comm_id
             self.current_community_nodes = None
+        elif strategy_id == 5:
+            self.betweenness_dict = nx.betweenness_centrality(G=g)
+            self.apply_daily_vaccination = self.high_betweenness_nodes_first
         else:
             raise NotImplementedError
 
@@ -50,6 +54,20 @@ class VaccinationStrategy:
         # order by degree and vaccinate
         return vaccinate_selected_high_degree_nodes_first(g=g, nodes_dict=self.current_community_nodes,
                                                           vacc_percentage=vacc_percentage)
+
+    def high_betweenness_nodes_first(self, g: nx.Graph, vacc_percentage: float = 0.004):
+        h_nodes_dict = {node_id: node_data for node_id, node_data in
+                        get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])}
+        nodes_betweenness = [(node_id, self.betweenness_dict[node_id]) for node_id in list(h_nodes_dict.keys())]
+
+        nodes_betweenness_sorted = sorted(nodes_betweenness, key=lambda x: x[1], reverse=True)
+
+        available_doses = get_vaccine_doses_count(g=g, vacc_percentage=vacc_percentage,
+                                                  nodes_count=len(nodes_betweenness_sorted))
+        to_be_vaccinated = [(node_id, h_nodes_dict[node_id]) for node_id, _ in
+                            nodes_betweenness_sorted[:available_doses]]
+        vaccinations = _apply_vaccination_on_selected_nodes(to_be_vaccinated=to_be_vaccinated)
+        return vaccinations
 
     def _get_connector_nodes(self, g: nx.Graph):
         community_nodes = get_conditional_nodes(g=g,
@@ -122,15 +140,3 @@ def high_degree_first_vaccination(g: nx.Graph, vacc_percentage: float = 0.004):
     h_nodes_dict = {node_id: node_data for node_id, node_data in
                     get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])}
     return vaccinate_selected_high_degree_nodes_first(g=g, nodes_dict=h_nodes_dict, vacc_percentage=vacc_percentage)
-
-
-def high_out_degree_communities_first():
-    pass
-
-
-def nodes_connecting_most_communities_first():
-    pass
-
-
-def high_betweenness_nodes_first():
-    pass
