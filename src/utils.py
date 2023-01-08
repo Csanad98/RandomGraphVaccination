@@ -101,3 +101,16 @@ def get_conditional_nodes(g: nx.Graph, attributes: List[str], values: List) -> L
         else:
             result += [(node, node_data)]
     return result
+
+
+def get_nodes_by_degree_order(g: nx.Graph, node_ids: np.array):
+    deg_sorted_nodes = sorted(g.degree(node_ids), key=lambda x: x[1], reverse=True)
+    return deg_sorted_nodes
+
+
+def get_max_community_id(g: nx.Graph) -> int:
+    max_id = -1
+    for node, node_data in g.nodes.items():
+        if node_data["community"] > max_id:
+            max_id = node_data["community"]
+    return max_id

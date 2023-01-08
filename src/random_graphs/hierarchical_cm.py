@@ -139,14 +139,13 @@ def hierarchical_configuration_model_algo3(deg_seq_in: np.array,
     return full_graph
 
 
-
 if "__main__" == __name__:
     seed = 1
     random.seed(seed)
     community_sizes = [random.randint(5, 15) for _ in range(20)]
     tau = 2.8
     p = 0.05
-    lam = 15
+    lam = 3
     n = sum(community_sizes)
     deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)

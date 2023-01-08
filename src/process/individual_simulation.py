@@ -11,15 +11,14 @@ from plots.plot_simulation import plot_ts_data_for_each_group
 from random_graphs.hierarchical_cm import hierarchical_configuration_model_algo1, hierarchical_configuration_model_algo3
 
 from utils import create_community_random_color_map, community_map_from_community_sizes, \
-    community_sizes_generator, init_infected
+    community_sizes_generator, init_infected, get_max_community_id
 
 from random_graphs.degree_sequence_generator import generate_power_law_degree_seq, \
     generate_community_degree_seq, generate_poisson_degree_seq
 
 from node_attributes import attr_assign
 
-from vaccination_strategies import no_vaccination, random_vaccination, max_vaccination_level_reached, \
-    risk_group_biased_random_vaccination, high_degree_first_vaccination
+from vaccination_strategies import max_vaccination_level_reached, VaccinationStrategy
 
 
 def single_graph_generator(seed: int,
@@ -65,11 +64,11 @@ def single_graph_generator(seed: int,
     print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
-    if n <= 1000:
-        color_map = create_community_random_color_map(communities)
-        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
-        plt.show()
-        print("graph plotting: {:.2f}s".format(time.time() - t0))
+    # if n <= 1000:
+    #     color_map = create_community_random_color_map(communities)
+    #     nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+    #     plt.show()
+    #     print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
@@ -196,6 +195,10 @@ def single_graph_simulation(seed: int,
     # deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
     ts_data = np.zeros((n_days, 8))
 
+    vacc_strat = VaccinationStrategy(strategy_id=vaccination_strategy)
+    max_comm_id = get_max_community_id(g=g)
+
+
     # start of simulation
     for i in range(0, n_days):
         # run one step of the simulation
@@ -206,14 +209,17 @@ def single_graph_simulation(seed: int,
                                              num_nodes=g.number_of_nodes(),
                                              vaccinated_count=np.sum(ts_data[:, 3]) + np.sum(ts_data[:, 7])):
             if vaccination_strategy == 0:
-                vacc_dict = no_vaccination()
+                vacc_dict = vacc_strat.apply_daily_vaccination()
             elif vaccination_strategy == 1:
-                vacc_dict = random_vaccination(g=g, vacc_percentage=daily_vacc_prop, seed=seed)
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop, seed=seed)
             elif vaccination_strategy == 2:
-                vacc_dict = risk_group_biased_random_vaccination(g=g, vacc_percentage=daily_vacc_prop,
-                                                                 hr_bias=0.9, seed=seed)
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop,
+                                                               hr_bias=0.9, seed=seed)
             elif vaccination_strategy == 3:
-                vacc_dict = high_degree_first_vaccination(g=g, vacc_percentage=daily_vacc_prop)
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
+            elif vaccination_strategy == 4:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, last_community_id=max_comm_id,
+                                                               vacc_percentage=daily_vacc_prop)
             else:
                 raise NotImplementedError
             daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]
