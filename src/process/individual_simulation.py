@@ -56,7 +56,7 @@ def single_graph_generator(seed: int,
     # generate sequence of community sizes
     community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, prop_com_size=prop_com_size,
                                                 seed=seed)
-    print("community size generation: {:.2f}s".format(time.time() - t0))
+    # print("community size generation: {:.2f}s".format(time.time() - t0))
     # generate sequences of degree and community distributions
     communities = community_map_from_community_sizes(community_sizes)
     if degree_distribution == "power_law":
@@ -70,18 +70,18 @@ def single_graph_generator(seed: int,
                                                community_sizes=community_sizes,
                                                gen_param=lam_in)
 
-    print("hcm parameters generation: {:.2f}s".format(time.time() - t0))
+    # print("hcm parameters generation: {:.2f}s".format(time.time() - t0))
 
     # generate hierarchical configuration model
     g = hierarchical_configuration_model_algo3(deg_seq_in=deg_seq_in, deg_seq_out=deg_seq_out, communities=communities)
-    print("hcm generation: {:.2f}s".format(time.time() - t0))
+    # print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
     if n <= 1000:
         color_map = create_community_random_color_map(communities)
         nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
         plt.show()
-        print("graph plotting: {:.2f}s".format(time.time() - t0))
+        # print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
@@ -90,10 +90,10 @@ def single_graph_generator(seed: int,
                     prop_hr_lr=prop_hr_lr,
                     vacc_app_prob=vacc_app_prob,
                     seed=seed)
-    print("attribute assignment: {:.2f}s".format(time.time() - t0))
+    # print("attribute assignment: {:.2f}s".format(time.time() - t0))
     # set the initially infected individuals
     init_infected(g=g, prop_int_inf=prop_int_inf, prop_int_inf_hr=prop_int_inf_hr, seed=seed)
-    print("initial infections added: {:.2f}s".format(time.time() - t0))
+    # print("initial infections added: {:.2f}s".format(time.time() - t0))
     return g
 
 
@@ -215,7 +215,7 @@ def single_graph_simulation(seed: int,
         ts_data[i] = daily_data
         seed += 1
 
-    print("simulation of all days: {:.2f}s".format(time.time() - t0))
+    # print("simulation of all days: {:.2f}s".format(time.time() - t0))
 
     return g, ts_data
 
@@ -251,7 +251,7 @@ if "__main__" == __name__:
                                          max_vacc_threshold=0.8, g=g, t0=t0)
     collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)
-    print("Pandemic end day: {}".format(get_end_time_of_pandemic(ts_data)))
+    print("Pandemic end (year ratio): {}".format(get_end_time_of_pandemic(ts_data)))
     peaks = get_max_infected_ratio(time_series_data=ts_data, num_nodes=n)
     print("Pandemic peak ratios; everyone: {}, hr: {}, lr: {}".format(peaks[0], peaks[1], peaks[2]))
     print("experiment took: {:.2f}s".format(time.time() - t0))

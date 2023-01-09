@@ -26,7 +26,7 @@ def vaccinate_selected_high_degree_nodes_first(g: nx.Graph, nodes_dict: dict, va
 
 def _apply_vaccination_on_selected_nodes(to_be_vaccinated: List[Tuple[int, dict]]) -> Dict[str, int]:
     """
-    Vaccinates selected nodes, counts the number of high and low risk vaccinations.
+    Vaccinates selected nodes, ratios the number of high and low risk vaccinations.
     :param to_be_vaccinated:
     :return: count of hr and lr vaccinations that have occurred
     """

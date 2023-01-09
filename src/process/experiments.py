@@ -1,6 +1,9 @@
 import time
 from typing import List
 
+import pandas as pd
+
+from analysis.stats import collect_health_attr_stats, get_max_infected_ratio, combine_data_from_experiment
 from process.individual_simulation import single_graph_simulation, single_graph_generator
 
 
@@ -27,6 +30,19 @@ def run_experiments(graph_sizes: List[int],
                     max_vaccine_thresholds: List[float],
                     vaccine_strategies: List[int],
                     seeds: List[int]):
+    num_exp = len(graph_sizes) * len(hr_community_sizes) * len(lr_community_sizes) * \
+              len(lr_ppl_per_hr_communities) * len(degree_distributions) * len(degree_distribution_params["power_law"]) \
+              * len(max_vaccine_thresholds) * len(vaccine_strategies) * len(seeds)
+    i = 1
+
+    columns = ['n', 'hr_com_size', 'lr_com_size', "lr_prop_per_com", "degree_dist", "deg_dist_param",
+               "com_dist_param", "max_vaccine_threshold", "vacc_strategy", "seed", "end",
+               "peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr", "rec",
+               "rec_hr", "rec_lr", "vacc", "vacc_hr", "vacc_lr", "imu",
+               "imu_hr", "imu_lr", "never_v", "never_v_hr", "never_v_lr"]
+
+    row_list = []
+
     for n in graph_sizes:
         for hr_com_size in hr_community_sizes:
             for lr_com_size in lr_community_sizes:
@@ -57,17 +73,45 @@ def run_experiments(graph_sizes: List[int],
                                                                                  vaccination_strategy=vacc_strategy,
                                                                                  max_vacc_threshold=max_vaccine_threshold,
                                                                                  t0=t0)
-                                            print("experiment took: {:.2f}s".format(time.time() - t0))
+                                            stats = combine_data_from_experiment(g=g, ts_data=ts_data)
+                                            add_exp_prams(row_dict=stats, n=n, hr_com_size=hr_com_size,
+                                                          lr_com_size=lr_com_size, lr_prop_per_com=lr_prop_per_com,
+                                                          degree_dist=degree_dist, deg_dist_param=deg_dist_param,
+                                                          com_dist_param=com_dist_param,
+                                                          max_vaccine_threshold=max_vaccine_threshold,
+                                                          vacc_strategy=vacc_strategy, seed=seed)
+                                            row_list.append(stats)
+                                            i += 1
+                                            print("experiment took: {:.2f}s, done: {}%".format(time.time() - t0,
+                                                                                               round(100 * i / num_exp,
+                                                                                                     2)))
+    df = pd.DataFrame(row_list, columns=columns)
+    df.to_csv("experiment_data")
+
+
+def add_exp_prams(row_dict: dict, n: int, hr_com_size: float, lr_com_size: float, lr_prop_per_com: float,
+                  degree_dist: str, deg_dist_param: float, com_dist_param: float, max_vaccine_threshold: float,
+                  vacc_strategy: int, seed: int):
+    row_dict["n"] = n
+    row_dict["hr_com_size"] = hr_com_size
+    row_dict["lr_com_size"] = lr_com_size
+    row_dict["lr_prop_per_com"] = lr_prop_per_com
+    row_dict["degree_dist"] = degree_dist
+    row_dict["deg_dist_param"] = deg_dist_param
+    row_dict["com_dist_param"] = com_dist_param
+    row_dict["max_vaccine_threshold"] = max_vaccine_threshold
+    row_dict["vacc_strategy"] = vacc_strategy
+    row_dict["seed"] = seed
 
 
 if "__main__" == __name__:
     run_experiments(
         graph_sizes=[500],
-        hr_community_sizes=[0.01, 0.05, 0.1],
+        hr_community_sizes=[0.05, 0.1],
         lr_community_sizes=[0.2],
         lr_ppl_per_hr_communities=[0.05, 0.025, 0.1],  # 20 ppl for one nurse, 10 ppl/ nurse, 5 ppl/ nurse
-        degree_distributions=["power_law", "poisson"],
-        degree_distribution_params={"power_law": [2.0, 2.5, 3.0], "poisson": [10, 25, 40]},
+        degree_distributions=["power_law"],
+        degree_distribution_params={"power_law": [2.0, 2.5, 3.0]},
         community_deg_dist_params=[25],
         max_vaccine_thresholds=[0.7],
         vaccine_strategies=[i for i in range(7)],
