@@ -23,24 +23,29 @@ from vaccination_strategies import max_vaccination_level_reached, VaccinationStr
 
 
 def single_graph_generator(seed: int,
+                           t0: float,
                            n: int = 1000,
-                           tau: float = 2.8,
-                           lam: float = 15,
+                           lam_out: float = 2.8,
+                           lam_in: float = 15,
                            prop_lr_com_size: float = 0.45,
-                           prop_int_inf: float = 0.05,
+                           prop_com_size: float = 0.04,
+                           prop_int_inf: float = 0.01,
                            prop_int_inf_hr: float = 0.5,
                            prop_hr_hr: float = 0.7,
                            prop_hr_lr: float = 0,
-                           vacc_app_prob: float = 0.7):
+                           vacc_app_prob: float = 0.7,
+                           degree_distribution: str = "power_law"):
     """
     Creates a hierarchical configuration model graph with randomly generated degree distributions and assigns the
     attributes of community, health risk group, infectivity and outcome. It also starts with a starting percentage of
     infected nodes
+    :param degree_distribution:
+    :param prop_com_size: mean proportion of nodes in the high risk communities
     :param vacc_app_prob: vaccine approval probability
     :param n: number of people
     :param seed: seed
-    :param tau: parameter for outward degree distribution
-    :param lam: parameter for inter-community degree distribution
+    :param lam_out: parameter for outward degree distribution
+    :param lam_in: parameter for inter-community degree distribution
     :param prop_lr_com_size: proportion of nodes in the low risk community
     :param prop_int_inf: proportion of initially infected nodes
     :param prop_int_inf_hr: proportion of high risk in the initially infected nodes
@@ -48,16 +53,23 @@ def single_graph_generator(seed: int,
     :param prop_hr_lr: proportion of high risk individuals in low risk groups
     :return: graph: the generated hierarchical configuration model graph with the node attributes
     """
-    t0 = time.time()
     # generate sequence of community sizes
-    community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, seed=seed)
+    community_sizes = community_sizes_generator(n=n, prop_lr_com_size=prop_lr_com_size, prop_com_size=prop_com_size,
+                                                seed=seed)
     print("community size generation: {:.2f}s".format(time.time() - t0))
     # generate sequences of degree and community distributions
-    deg_seq_out = generate_power_law_degree_seq(n=n, tau=tau, seed=seed)
     communities = community_map_from_community_sizes(community_sizes)
+    if degree_distribution == "power_law":
+        deg_seq_out = generate_power_law_degree_seq(n=n, tau=lam_out, seed=seed)
+    elif degree_distribution == "poisson":
+        deg_seq_out = generate_poisson_degree_seq(n=n, lam=lam_out, seed=seed)
+    else:
+        raise NotImplementedError("only power law and poisson degree distribution is supported")
+
     deg_seq_in = generate_community_degree_seq(seq_generator=generate_poisson_degree_seq,
                                                community_sizes=community_sizes,
-                                               gen_param=lam)
+                                               gen_param=lam_in)
+
     print("hcm parameters generation: {:.2f}s".format(time.time() - t0))
 
     # generate hierarchical configuration model
@@ -65,11 +77,11 @@ def single_graph_generator(seed: int,
     print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
-    # if n <= 1000:
-    #     color_map = create_community_random_color_map(communities)
-    #     nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
-    #     plt.show()
-    #     print("graph plotting: {:.2f}s".format(time.time() - t0))
+    if n <= 1000:
+        color_map = create_community_random_color_map(communities)
+        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+        plt.show()
+        print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
@@ -137,30 +149,17 @@ def time_step_simulation(g: nx.Graph, seed: int):
 
 
 def single_graph_simulation(seed: int,
-                            n: int = 1000,
-                            tau: float = 2.8,
-                            lam: float = 15,
-                            prop_lr_com_size: float = 0.45,
-                            prop_int_inf: float = 0.05,
-                            prop_int_hr_inf: float = 0.5,
-                            prop_hr_hr: float = 0.7,
-                            prop_hr_lr: float = 0,
+                            g: nx.Graph,
+                            t0: float,
                             n_days: int = 365,
                             vaccination_strategy: int = 0,
                             daily_vacc_prop: float = 0.004,
-                            max_vacc_threshold: float = 1):
+                            max_vacc_threshold: float = 1,
+                            ):
     """
-    Creates a graph and simulates n_days days of the graph.
+    simulates n_days days of the graph.
     :param daily_vacc_prop: proportion of population that can be vaccinated in one day
-    :param n: number of people
     :param seed: seed
-    :param tau: parameter for outward degree distribution
-    :param lam: parameter for inter-community degree distribution
-    :param prop_lr_com_size: proportion of nodes in the low risk community
-    :param prop_int_inf: proportion of initially infected nodes
-    :param prop_int_hr_inf: proportion of high risk in the initially infected nodes
-    :param prop_hr_hr: proportion of high risk individuals in high risk groups
-    :param prop_hr_lr: proportion of high risk individuals in low risk groups
     :param n_days: number of days simulated
     :param vaccination_strategy: the vaccination strategy to be used: takes values:
                                 0: no vaccination
@@ -177,19 +176,6 @@ def single_graph_simulation(seed: int,
              vaccinations_hr: times series of vaccinations of high risk individuals
              vaccinations_lr: times series of vaccinations of low risk individuals
     """
-    t0 = time.time()
-    # generation of our hierarchical configuration model random graph
-    g = single_graph_generator(seed=seed,
-                               n=n,
-                               tau=tau,
-                               lam=lam,
-                               prop_lr_com_size=prop_lr_com_size,
-                               prop_int_inf=prop_int_inf,
-                               prop_int_inf_hr=prop_int_hr_inf,
-                               prop_hr_hr=prop_hr_hr,
-                               prop_hr_lr=prop_hr_lr,
-                               vacc_app_prob=max_vacc_threshold)
-    print("graph generation & preperation: {:.2f}".format(time.time() - t0))
 
     # time simulation
     # the 8 spots are for: deaths_hr, recoveries_hr, infections_hr, vaccinations_hr,
@@ -229,24 +215,43 @@ def single_graph_simulation(seed: int,
         ts_data[i] = daily_data
         seed += 1
 
-    print("simulation of all days: {:.2f}".format(time.time() - t0))
+    print("simulation of all days: {:.2f}s".format(time.time() - t0))
 
     return g, ts_data
 
 
 if "__main__" == __name__:
-    seed = 1
-    n = 1000
+    t0: float = time.time()
+    seed = 0
+    n = 500
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    vacc_strategy = 2
+    vacc_strategy = 6
     prop_lr_com_size = 0.25
-    g, ts_data = single_graph_simulation(n=n, seed=seed, prop_int_inf=prop_int_inf, prop_int_hr_inf=prop_int_hr_inf,
-                                         n_days=n_days, vaccination_strategy=vacc_strategy, max_vacc_threshold=0.8,
-                                         prop_lr_com_size=prop_lr_com_size)
+    prop_com_size = 0.04
+    lam_out: float = 3.5  # poisson or power law
+    lam_in: float = 50  # poisson parameter
+    prop_hr_hr: float = 0.7
+    prop_hr_lr: float = 0
+    max_vacc_threshold = 0.8
+    g = single_graph_generator(seed=seed,
+                               n=n,
+                               lam_out=lam_out,
+                               lam_in=lam_in,
+                               prop_lr_com_size=prop_lr_com_size,
+                               prop_com_size=prop_com_size,
+                               prop_int_inf=prop_int_inf,
+                               prop_int_inf_hr=prop_int_hr_inf,
+                               prop_hr_hr=prop_hr_hr,
+                               prop_hr_lr=prop_hr_lr,
+                               vacc_app_prob=max_vacc_threshold,
+                               t0=t0)
+    g, ts_data = single_graph_simulation(seed=seed, n_days=n_days, vaccination_strategy=vacc_strategy,
+                                         max_vacc_threshold=0.8, g=g, t0=t0)
     collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)
     print("Pandemic end day: {}".format(get_end_time_of_pandemic(ts_data)))
     peaks = get_max_infected_ratio(time_series_data=ts_data, num_nodes=n)
     print("Pandemic peak ratios; everyone: {}, hr: {}, lr: {}".format(peaks[0], peaks[1], peaks[2]))
+    print("experiment took: {:.2f}s".format(time.time() - t0))
