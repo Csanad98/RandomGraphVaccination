@@ -81,12 +81,12 @@ def run_experiments(graph_sizes: List[int],
                                                           max_vaccine_threshold=max_vaccine_threshold,
                                                           vacc_strategy=vacc_strategy, seed=seed)
                                             row_list.append(stats)
-                                            i += 1
                                             print("experiment took: {:.2f}s, done: {}%".format(time.time() - t0,
                                                                                                round(100 * i / num_exp,
                                                                                                      2)))
+                                            i += 1
     df = pd.DataFrame(row_list, columns=columns)
-    df.to_csv("experiment_data")
+    df.to_csv("experiment_data.csv", index=False)
 
 
 def add_exp_prams(row_dict: dict, n: int, hr_com_size: float, lr_com_size: float, lr_prop_per_com: float,
