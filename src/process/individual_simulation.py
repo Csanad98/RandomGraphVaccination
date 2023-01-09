@@ -77,11 +77,11 @@ def single_graph_generator(seed: int,
     # print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
-    if n <= 1000:
-        color_map = create_community_random_color_map(communities)
-        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
-        plt.show()
-        # print("graph plotting: {:.2f}s".format(time.time() - t0))
+    # if n <= 1000:
+    #     color_map = create_community_random_color_map(communities)
+    #     nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+    #     plt.show()
+    #     # print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
