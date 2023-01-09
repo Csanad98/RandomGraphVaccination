@@ -82,8 +82,8 @@ def run_experiments(graph_sizes: List[int],
                                                           max_vaccine_threshold=max_vaccine_threshold,
                                                           vacc_strategy=vacc_strategy, seed=seed)
                                             row_list.append(stats)
-                                            print("experiment took: {:.2f}s, experiment: {}/{}".format(time.time() - t0,
-                                                                                                       i, num_exp))
+                                            print("experiment took: {:.2f}s, experiment: {}/{}, mean exp time: {:.2f}s"
+                                                  .format(time.time() - t0, i, num_exp, (time.time() - t00)/i))
                                             i += 1
     df = pd.DataFrame(row_list, columns=columns)
     df.to_csv("experiment_data.csv", index=False)
@@ -109,12 +109,12 @@ if "__main__" == __name__:
     run_experiments(
         graph_sizes=[500],
         hr_community_sizes=[0.05, 0.1],
-        lr_community_sizes=[0.2],
-        lr_ppl_per_hr_communities=[0.05, 0.025, 0.1],  # 20 ppl for one nurse, 10 ppl/ nurse, 5 ppl/ nurse
+        lr_community_sizes=[0.2, 0.4],
+        lr_ppl_per_hr_communities=[0.05, 0.025],  # 20 ppl for one nurse, 10 ppl/ nurse
         degree_distributions=["power_law"],
         degree_distribution_params={"power_law": [2.0, 2.5, 3.0]},
-        community_deg_dist_params=[25],
-        max_vaccine_thresholds=[0.7],
+        community_deg_dist_params=[20, 40],
+        max_vaccine_thresholds=[0.5, 0.65, 0.8],
         vaccine_strategies=[i for i in range(7)],
-        seeds=[i for i in range(5)]
+        seeds=[i for i in range(3)]
     )

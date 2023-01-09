@@ -223,11 +223,11 @@ def single_graph_simulation(seed: int,
 if "__main__" == __name__:
     t0: float = time.time()
     seed = 0
-    n = 500
+    n = 1000
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    vacc_strategy = 6
+    vacc_strategy = 4
     prop_lr_com_size = 0.25
     prop_com_size = 0.04
     lam_out: float = 3.5  # poisson or power law
