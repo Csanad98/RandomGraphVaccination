@@ -30,6 +30,7 @@ def run_experiments(graph_sizes: List[int],
                     max_vaccine_thresholds: List[float],
                     vaccine_strategies: List[int],
                     seeds: List[int]):
+    t00: float = time.time()
     num_exp = len(graph_sizes) * len(hr_community_sizes) * len(lr_community_sizes) * \
               len(lr_ppl_per_hr_communities) * len(degree_distributions) * len(degree_distribution_params["power_law"]) \
               * len(max_vaccine_thresholds) * len(vaccine_strategies) * len(seeds)
@@ -81,12 +82,12 @@ def run_experiments(graph_sizes: List[int],
                                                           max_vaccine_threshold=max_vaccine_threshold,
                                                           vacc_strategy=vacc_strategy, seed=seed)
                                             row_list.append(stats)
-                                            print("experiment took: {:.2f}s, done: {}%".format(time.time() - t0,
-                                                                                               round(100 * i / num_exp,
-                                                                                                     2)))
+                                            print("experiment took: {:.2f}s, experiment: {}/{}".format(time.time() - t0,
+                                                                                                       i, num_exp))
                                             i += 1
     df = pd.DataFrame(row_list, columns=columns)
     df.to_csv("experiment_data.csv", index=False)
+    print("all experiments took: {:.2f}s".format(time.time() - t00))
 
 
 def add_exp_prams(row_dict: dict, n: int, hr_com_size: float, lr_com_size: float, lr_prop_per_com: float,
