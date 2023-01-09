@@ -111,7 +111,7 @@ if "__main__" == __name__:
         graph_sizes=[500],
         hr_community_sizes=[0.05, 0.1],
         lr_community_sizes=[0.2, 0.4],
-        lr_ppl_per_hr_communities=[0.05, 0.025],  # 20 ppl for one nurse, 10 ppl/ nurse
+        lr_ppl_per_hr_communities=[0.05, 0.1],  # 20 ppl for one nurse, 10 ppl/ nurse
         degree_distributions=["power_law"],
         degree_distribution_params={"power_law": [2.0, 2.5, 3.0]},
         community_deg_dist_params=[20, 40],
