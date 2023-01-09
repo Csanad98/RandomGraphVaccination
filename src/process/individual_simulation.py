@@ -221,6 +221,8 @@ def single_graph_simulation(seed: int,
                 vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
             elif vaccination_strategy == 5:
                 vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
+            elif vaccination_strategy == 6:
+                vacc_dict = vacc_strat.apply_daily_vaccination(g=g, vacc_percentage=daily_vacc_prop)
             else:
                 raise NotImplementedError
             daily_data[3], daily_data[7] = vacc_dict["high_risk"], vacc_dict["low_risk"]

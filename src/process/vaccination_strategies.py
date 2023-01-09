@@ -29,8 +29,16 @@ class VaccinationStrategy:
             self.current_community = max_comm_id
             self.current_community_nodes = None
         elif strategy_id == 5:
-            self.betweenness_dict = nx.betweenness_centrality(G=g)
-            self.apply_daily_vaccination = self.high_betweenness_nodes_first
+            if g.number_of_nodes() > 1000:
+                # if we have too many nodes, then use only 1000 nodes to approximate this measure
+                self.centrality_dict = nx.betweenness_centrality(G=g, k=500)
+            else:
+                self.centrality_dict = nx.betweenness_centrality(G=g)
+            self.apply_daily_vaccination = self.high_centrality_nodes_first
+        elif strategy_id == 6:
+            self.centrality_dict = nx.closeness_centrality(G=g)
+            self.apply_daily_vaccination = self.high_centrality_nodes_first
+
         else:
             raise NotImplementedError
 
@@ -55,17 +63,17 @@ class VaccinationStrategy:
         return vaccinate_selected_high_degree_nodes_first(g=g, nodes_dict=self.current_community_nodes,
                                                           vacc_percentage=vacc_percentage)
 
-    def high_betweenness_nodes_first(self, g: nx.Graph, vacc_percentage: float = 0.004):
+    def high_centrality_nodes_first(self, g: nx.Graph, vacc_percentage: float = 0.004):
         h_nodes_dict = {node_id: node_data for node_id, node_data in
                         get_conditional_nodes(g=g, attributes=["health", "vaccine_approval"], values=[0, True])}
-        nodes_betweenness = [(node_id, self.betweenness_dict[node_id]) for node_id in list(h_nodes_dict.keys())]
+        nodes_centrality = [(node_id, self.centrality_dict[node_id]) for node_id in list(h_nodes_dict.keys())]
 
-        nodes_betweenness_sorted = sorted(nodes_betweenness, key=lambda x: x[1], reverse=True)
+        nodes_centrality_sorted = sorted(nodes_centrality, key=lambda x: x[1], reverse=True)
 
         available_doses = get_vaccine_doses_count(g=g, vacc_percentage=vacc_percentage,
-                                                  nodes_count=len(nodes_betweenness_sorted))
+                                                  nodes_count=len(nodes_centrality_sorted))
         to_be_vaccinated = [(node_id, h_nodes_dict[node_id]) for node_id, _ in
-                            nodes_betweenness_sorted[:available_doses]]
+                            nodes_centrality_sorted[:available_doses]]
         vaccinations = _apply_vaccination_on_selected_nodes(to_be_vaccinated=to_be_vaccinated)
         return vaccinations
 
@@ -114,17 +122,22 @@ def risk_group_biased_random_vaccination(g: nx.Graph, vacc_percentage: float = 0
     :return: vaccinations, a dict containing the amount of vaccinations in low risk and high risk groups
     """
     random.seed(seed)
+    all_to_be_vaccinated = []
+    remaining_doses = int(vacc_percentage * g.number_of_nodes())
     hr_h_nodes = get_conditional_nodes(g=g,
                                        attributes=["health", "risk_group", "vaccine_approval"],
                                        values=[0, "high_risk", True])
     lr_h_nodes = get_conditional_nodes(g=g,
                                        attributes=["health", "risk_group", "vaccine_approval"],
                                        values=[0, "low_risk", True])
-    to_be_vaccinated_hr = random.sample(hr_h_nodes, min(int(hr_bias * vacc_percentage * g.number_of_nodes()),
+    if len(hr_h_nodes) > 0:
+        to_be_vaccinated_hr = random.sample(hr_h_nodes, min(int(hr_bias * vacc_percentage * g.number_of_nodes()),
                                                         len(hr_h_nodes)))
-    remaining_doses = int(vacc_percentage * g.number_of_nodes()) - len(to_be_vaccinated_hr)
-    to_be_vaccinated_lr = random.sample(lr_h_nodes, min(remaining_doses, len(hr_h_nodes)))
-    all_to_be_vaccinated = to_be_vaccinated_hr + to_be_vaccinated_lr
+        remaining_doses -= len(to_be_vaccinated_hr)
+        all_to_be_vaccinated = to_be_vaccinated_hr
+    if len(lr_h_nodes) > 0:
+        to_be_vaccinated_lr = random.sample(lr_h_nodes, min(remaining_doses, len(hr_h_nodes)))
+        all_to_be_vaccinated += to_be_vaccinated_lr
     vaccinations = _apply_vaccination_on_selected_nodes(to_be_vaccinated=all_to_be_vaccinated)
     return vaccinations
 
