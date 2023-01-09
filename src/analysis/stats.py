@@ -45,10 +45,14 @@ def get_end_time_of_pandemic(time_series_data: np.ndarray) -> int:
     vaccinations_hr, deaths_lr, recoveries_lr, infections_lr, vaccinations_lr
     :return: last day of the pandemic (max of: date of last recovery or death)
     """
-    last_hr_death = np.nonzero(time_series_data[:, 0])[0][-1]
-    last_hr_recovery = np.nonzero(time_series_data[:, 1])[0][-1]
-    last_lr_death = np.nonzero(time_series_data[:, 4])[0][-1]
-    last_lr_recovery = np.nonzero(time_series_data[:, 5])[0][-1]
+    hr_deaths = np.nonzero(time_series_data[:, 0])[0]
+    last_hr_death = hr_deaths[-1] if hr_deaths.size != 0 else 0
+    hr_recoveries = np.nonzero(time_series_data[:, 1])[0]
+    last_hr_recovery = hr_recoveries[-1] if hr_recoveries.size != 0 else 0
+    lr_deaths = np.nonzero(time_series_data[:, 4])[0]
+    last_lr_death = lr_deaths[-1] if lr_deaths.size != 0 else 0
+    lr_recoveries = np.nonzero(time_series_data[:, 5])[0]
+    last_lr_recovery = lr_recoveries[-1] if lr_recoveries.size != 0 else 0
     return max((last_hr_death, last_hr_recovery, last_lr_death, last_lr_recovery))
 
 
