@@ -2,3 +2,4 @@ networkx[all]==2.8.8
 numpy==1.23.5
 matplotlib==3.6.2
 scipy==1.9.3
+statsmodels==0.13.5
