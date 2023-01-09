@@ -58,7 +58,7 @@ def get_end_time_of_pandemic(time_series_data: np.ndarray) -> int:
     last_lr_death = lr_deaths[-1] if lr_deaths.size != 0 else 0
     lr_recoveries = np.nonzero(time_series_data[:, 5])[0]
     last_lr_recovery = lr_recoveries[-1] if lr_recoveries.size != 0 else 0
-    return max((last_hr_death, last_hr_recovery, last_lr_death, last_lr_recovery)) / time_series_data.shape[0]
+    return max((last_hr_death, last_hr_recovery, last_lr_death, last_lr_recovery))
 
 
 def get_max_infected_ratio(time_series_data: np.ndarray, num_nodes: int) -> Tuple[float, float, float]:

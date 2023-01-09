@@ -251,7 +251,7 @@ if "__main__" == __name__:
                                          max_vacc_threshold=0.8, g=g, t0=t0)
     collect_health_attr_stats(g=g)
     plot_ts_data_for_each_group(ts_data=ts_data, n_days=n_days)
-    print("Pandemic end (year ratio): {}".format(get_end_time_of_pandemic(ts_data)))
+    print("Pandemic end day: {}".format(get_end_time_of_pandemic(ts_data)))
     peaks = get_max_infected_ratio(time_series_data=ts_data, num_nodes=n)
     print("Pandemic peak ratios; everyone: {}, hr: {}, lr: {}".format(peaks[0], peaks[1], peaks[2]))
     print("experiment took: {:.2f}s".format(time.time() - t0))
