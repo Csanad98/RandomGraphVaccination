@@ -16,7 +16,7 @@ def regression_without_interaction(data: pd.DataFrame, var: str):
 
 
 def load_experiment_data():
-    df = pd.read_csv("data/experiment_data_n500.csv")
+    df = pd.read_csv("data/experiment_data.csv")
     # df.columns = ['n', 'hr_com_size', 'lr_com_size', "lr_prop_per_com", "degree_dist", "deg_dist_param",
     #               "com_dist_param", "max_vaccine_threshold", "vacc_strategy", "seed", "end",
     #               "peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr", "rec",
