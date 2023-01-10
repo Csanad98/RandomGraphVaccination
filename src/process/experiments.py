@@ -108,7 +108,7 @@ def add_exp_prams(row_dict: dict, n: int, hr_com_size: float, lr_com_size: float
 
 if "__main__" == __name__:
     run_experiments(
-        graph_sizes=[500],
+        graph_sizes=[500, 750, 1000],
         hr_community_sizes=[0.05, 0.1],
         lr_community_sizes=[0.2, 0.4],
         lr_ppl_per_hr_communities=[0.05, 0.1],  # 20 ppl for one nurse, 10 ppl/ nurse
