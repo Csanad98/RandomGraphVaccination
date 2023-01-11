@@ -15,19 +15,20 @@ def regression_without_interaction(data: pd.DataFrame, var: str):
     return model
 
 
-def load_experiment_data():
+def load_experiment_data(filter: int):
     df = pd.read_csv("data/experiment_data.csv")
     # df.columns = ['n', 'hr_com_size', 'lr_com_size', "lr_prop_per_com", "degree_dist", "deg_dist_param",
     #               "com_dist_param", "max_vaccine_threshold", "vacc_strategy", "seed", "end",
     #               "peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr", "rec",
     #               "rec_hr", "rec_lr", "vacc", "vacc_hr", "vacc_lr", "imu",
     #               "imu_hr", "imu_lr", "never_v", "never_v_hr", "never_v_lr"]
-    df_with_vaccine_rows_only = df[df["vacc_strategy"] > 0]
+    df_with_vaccine_rows_only = df[df["vacc_strategy"] != filter]
     return df, df_with_vaccine_rows_only
 
 
 if __name__ == "__main__":
-    df, df_vaccine_rows_only = load_experiment_data()
+    filter = 4
+    df, df_vaccine_rows_only = load_experiment_data(0)
     variables_with_risk_groups = ["end", "peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr", "rec", "rec_hr",
                                   "rec_lr", "vacc",  "vacc_hr", "vacc_lr", "imu", "imu_hr", "imu_lr", "never_v",
                                   "never_v_hr", "never_v_lr"]
