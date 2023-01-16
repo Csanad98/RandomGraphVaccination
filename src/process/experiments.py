@@ -32,8 +32,9 @@ def run_experiments(graph_sizes: List[int],
                     seeds: List[int]):
     t00: float = time.time()
     num_exp = len(graph_sizes) * len(hr_community_sizes) * len(lr_community_sizes) * \
-              len(lr_ppl_per_hr_communities) * len(degree_distributions) * len(degree_distribution_params["power_law"]) \
-              * len(max_vaccine_thresholds) * len(vaccine_strategies) * len(seeds)
+              len(lr_ppl_per_hr_communities) * len(degree_distributions) * \
+              len(degree_distribution_params["power_law"]) * len(community_deg_dist_params) * \
+              len(max_vaccine_thresholds) * len(vaccine_strategies) * len(seeds)
     i = 1
 
     columns = ['n', 'hr_com_size', 'lr_com_size', "lr_prop_per_com", "degree_dist", "deg_dist_param",
@@ -83,7 +84,7 @@ def run_experiments(graph_sizes: List[int],
                                                           vacc_strategy=vacc_strategy, seed=seed)
                                             row_list.append(stats)
                                             print("experiment took: {:.2f}s, experiment: {}/{}, mean exp time: {:.2f}s"
-                                                  .format(time.time() - t0, i, num_exp, (time.time() - t00)/i))
+                                                  .format(time.time() - t0, i, num_exp, (time.time() - t00) / i))
                                             i += 1
     df = pd.DataFrame(row_list, columns=columns)
     df.to_csv("experiment_data.csv", index=False)
@@ -107,10 +108,10 @@ def add_exp_prams(row_dict: dict, n: int, hr_com_size: float, lr_com_size: float
 
 if "__main__" == __name__:
     run_experiments(
-        graph_sizes=[500],
+        graph_sizes=[500, 750, 1000],
         hr_community_sizes=[0.05, 0.1],
         lr_community_sizes=[0.2, 0.4],
-        lr_ppl_per_hr_communities=[0.05, 0.025],  # 20 ppl for one nurse, 10 ppl/ nurse
+        lr_ppl_per_hr_communities=[0.05, 0.1],  # 20 ppl for one nurse, 10 ppl/ nurse
         degree_distributions=["power_law"],
         degree_distribution_params={"power_law": [2.0, 2.5, 3.0]},
         community_deg_dist_params=[20, 40],

@@ -132,11 +132,11 @@ def risk_group_biased_random_vaccination(g: nx.Graph, vacc_percentage: float = 0
                                        values=[0, "low_risk", True])
     if len(hr_h_nodes) > 0:
         to_be_vaccinated_hr = random.sample(hr_h_nodes, min(int(hr_bias * vacc_percentage * g.number_of_nodes()),
-                                                        len(hr_h_nodes)))
+                                                            len(hr_h_nodes)))
         remaining_doses -= len(to_be_vaccinated_hr)
         all_to_be_vaccinated = to_be_vaccinated_hr
-    if len(lr_h_nodes) > 0:
-        to_be_vaccinated_lr = random.sample(lr_h_nodes, min(remaining_doses, len(hr_h_nodes)))
+    if len(lr_h_nodes) > 0 and remaining_doses > 0:
+        to_be_vaccinated_lr = random.sample(lr_h_nodes, min(remaining_doses, len(lr_h_nodes)))
         all_to_be_vaccinated += to_be_vaccinated_lr
     vaccinations = _apply_vaccination_on_selected_nodes(to_be_vaccinated=all_to_be_vaccinated)
     return vaccinations

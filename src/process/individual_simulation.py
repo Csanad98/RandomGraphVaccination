@@ -77,11 +77,12 @@ def single_graph_generator(seed: int,
     # print("hcm generation: {:.2f}s".format(time.time() - t0))
 
     # if graph is small enough, plot it
-    # if n <= 1000:
-    #     color_map = create_community_random_color_map(communities)
-    #     nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
-    #     plt.show()
-    #     # print("graph plotting: {:.2f}s".format(time.time() - t0))
+    if n <= 1000:
+        color_map = create_community_random_color_map(communities)
+        nx.draw_spring(g, with_labels=False, width=0.1, edgecolors="k", alpha=0.9, node_color=color_map, node_size=10)
+        plt.savefig("network.png")
+        plt.show()
+        # print("graph plotting: {:.2f}s".format(time.time() - t0))
 
     # assign attributes to graph nodes
     g = attr_assign(g=g,
@@ -223,16 +224,16 @@ def single_graph_simulation(seed: int,
 if "__main__" == __name__:
     t0: float = time.time()
     seed = 0
-    n = 1000
+    n = 500
     prop_int_inf = 0.005  # total proportion of nodes that are initially infected (both low and high risk ppl)
     prop_int_hr_inf = 0.5  # proportion of initially infected ppl that are high risk
     n_days = 365
-    vacc_strategy = 4
-    prop_lr_com_size = 0.25
-    prop_com_size = 0.04
-    lam_out: float = 3.5  # poisson or power law
-    lam_in: float = 50  # poisson parameter
-    prop_hr_hr: float = 0.7
+    vacc_strategy = 6
+    prop_lr_com_size = 0.2
+    prop_com_size = 0.1  # HR com size
+    lam_out: float = 2.0  # poisson or power law
+    lam_in: float = 40  # poisson parameter
+    prop_hr_hr: float = 0.9
     prop_hr_lr: float = 0
     max_vacc_threshold = 0.8
     g = single_graph_generator(seed=seed,
