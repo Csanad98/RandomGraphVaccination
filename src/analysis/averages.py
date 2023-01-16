@@ -12,8 +12,9 @@ if __name__ == "__main__":
     variables_with_risk_groups = ["end", "peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr", "rec", "rec_hr",
                                   "rec_lr", "vacc",  "vacc_hr", "vacc_lr", "imu", "imu_hr", "imu_lr", "never_v",
                                   "never_v_hr", "never_v_lr"]
-    variables = ["peak", "peak_hr", "dead", "dead_hr"]
-    ylabels = ["Peak infection ratio", "HR peak infection ratio", "Death ratio", "HR death ratio"]
+    variables = ["peak", "peak_hr", "peak_lr", "dead", "dead_hr", "dead_lr"]
+    ylabels = ["Peak infection ratio", "HR peak infection ratio", "LR peak infection ratio",
+               "Death ratio", "HR death ratio", "LR death ratio"]
     for i in range(len(variables)):
         combined_df = []
         for vacc_strategy in range(7):
