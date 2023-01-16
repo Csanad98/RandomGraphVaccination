@@ -230,8 +230,8 @@ if "__main__" == __name__:
     n_days = 365
     vacc_strategy = 6
     prop_lr_com_size = 0.2
-    prop_com_size = 0.1  # HR com size
-    lam_out: float = 2.0  # poisson or power law
+    prop_com_size = 0.05  # HR com size
+    lam_out: float = 3.0  # poisson or power law
     lam_in: float = 40  # poisson parameter
     prop_hr_hr: float = 0.9
     prop_hr_lr: float = 0
